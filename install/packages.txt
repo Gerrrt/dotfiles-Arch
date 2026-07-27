@@ -75,6 +75,7 @@ reflector      # rank/refresh mirrorlist (run manually; see os/arch.zsh notes)
 curl
 wget
 jq
+w3m            # terminal web browser (text-mode; renders tables + inline images)
 direnv
 gawk
 flatpak
