@@ -140,7 +140,7 @@ git push -u origin main
 ## After setup
 
 This box is now an ordinary consumer of the system. When Core changes, run
-`./bin/sync-core.sh` from `dotfiles-core` to fan the update into this repo's
+`./scripts/sync-core.sh` from `dotfiles-core` to fan the update into this repo's
 vendored `core/` (commit + push afterward), exactly like every other OS repo. To
 re-link without touching packages: `./bootstrap.sh --links-only`.
 
