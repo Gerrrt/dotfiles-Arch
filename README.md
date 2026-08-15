@@ -119,7 +119,13 @@ exec zsh
 `core/` is a vendored subtree and is **already present** in a clone — there is no
 submodule step. `bootstrap.sh` is idempotent: it does a full `pacman -Syu`,
 installs the package list, and symlinks Core + the Arch layer into place. Flags:
-`--links-only` (re-link without touching `pacman`), `--no-flatpak`.
+`--dry-run` (preview everything, change nothing), `--links-only` (re-link without
+touching `pacman`), `--no-flatpak`, `--only`/`--skip` (wire a subset of module
+groups). Run `./bootstrap.sh --help` for the full list.
+
+Local checks live in the root `Makefile` — `make lint` runs the same gate as CI,
+`make packages-check` verifies every package name still resolves, `make secrets`
+runs gitleaks. `make` on its own lists them.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -132,6 +138,7 @@ prompt — comes from vendored Core; this repo owns the Arch specifics:
 - `bootstrap.sh` — `pacman` provision + Core/OS symlink wiring (idempotent)
 - `install/packages.txt` — the `pacman` package list (modern CLI stack)
 - `os/arch.zsh` — clipboard + package-manager aliases → `~/.config/zsh/80-os.zsh`
+- `Makefile` — local entry points: lint, dry-run, package + secret checks
 - `SETUP.md` — the from-scratch author walkthrough (mirrored on the hub)
 - `core/` — vendored from `dotfiles-core` (read-only here; edit upstream)
 

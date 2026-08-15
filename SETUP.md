@@ -20,8 +20,18 @@ prompt with no user, no `sudo`, and no `git`. `bootstrap.sh` clones nothing but
 calls `sudo` everywhere, so none of it can run until you create a wheel user with
 `sudo` and install `git`. Do this first, **as root**:
 
+> **The one sanctioned `-Sy` in this entire system.** Everything else here —
+> `os/arch.zsh`'s aliases, `bootstrap.sh`, the porting matrix — refuses to
+> refresh-without-upgrade, because installing after a bare `-Sy` is the
+> partial-upgrade footgun. The keyring is the documented exception: if the image's
+> bundled keys have expired, signature verification fails and the full `-Syu` on
+> the next line cannot run at all. Refreshing *only* `archlinux-keyring`, and
+> immediately following it with a full `-Syu`, is the upstream-recommended way out.
+> Do not generalise this line into an alias or copy the pattern anywhere else.
+
 ```bash
 # ArchWSL only: stale bundled keys are the #1 first-run failure — refresh first
+# (see the note above: this is the ONE sanctioned -Sy, and -Syu follows immediately)
 pacman -Sy archlinux-keyring
 
 pacman -Syu                               # golden rule: full upgrade, never -Sy alone
@@ -91,7 +101,12 @@ as happily: `git subtree add --prefix=core ~/dotfiles-core main --squash`.
 
 ## Stage 2 — bootstrap
 
+Preview first if you like — `--dry-run` prints the full plan (every package it
+would install, every symlink it would create, whether it would rewrite
+`/etc/wsl.conf`) and changes nothing:
+
 ```bash
+./bootstrap.sh --dry-run
 ./bootstrap.sh
 ```
 
@@ -143,6 +158,11 @@ This box is now an ordinary consumer of the system. When Core changes, run
 `./scripts/sync-core.sh` from `dotfiles-core` to fan the update into this repo's
 vendored `core/` (commit + push afterward), exactly like every other OS repo. To
 re-link without touching packages: `./bootstrap.sh --links-only`.
+
+Day-to-day checks live in the root `Makefile`: `make lint` (the same gate CI runs),
+`make packages-check` (do all the `install/packages.txt` names still exist? — worth
+running periodically on a rolling release), and `make secrets`. Run `make` on its
+own for the full list.
 
 ---
 
