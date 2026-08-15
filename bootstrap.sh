@@ -104,12 +104,16 @@ provision() {
   # block here. That's the Arch payoff: one package manager, no curl|sh fallbacks.
 
   # ── the few core-doctor tools NOT in the official repos (AUR / Go) ──────────
-  # carapace, sesh, op live only in the AUR (doggo moved into `extra` — it's in
-  # packages.txt now). This bootstrap deliberately does NOT build an AUR helper
-  # (paru is a documented manual step below), so sesh is installed from source —
-  # best-effort, never fatal under `set -e`. carapace CANNOT be (see its block
-  # below) and is a printed hint instead, like viddy and op. If you already run
-  # paru, the native route is:
+  # carapace, sesh and op are all absent from Arch's official repos (doggo moved into
+  # `extra` — it's in packages.txt now), and this bootstrap deliberately builds NO AUR
+  # helper (paru is a documented manual step below). What that means differs per tool,
+  # so they are handled three different ways rather than one:
+  #   • sesh     — has a working Go route, so it is built from source below: best-effort,
+  #                never fatal under `set -e`. The AUR `sesh-bin` is not needed.
+  #   • carapace — has NO Go route at all, for any version (see its block below), so it is
+  #                a printed `paru` hint instead, like viddy and op.
+  #   • op       — proprietary, no Go route either; printed hint.
+  # If you already run paru, the native route for all three is:
   #   paru -S carapace-bin sesh-bin 1password-cli
   # NOTE: `go install` drops binaries in $GOBIN (defaults to ~/go/bin), which is
   # NOT on the shell PATH (the Core shell layer prefixes ~/.local/bin + ~/.cargo/
