@@ -72,9 +72,14 @@ Entries below therefore cover the **Arch OS-native layer only**: `bootstrap.sh`,
   Arch base images (no `sudo`) previously prevented.
 - **Arch derivatives are accepted with a warning** rather than refused: the guard
   now falls back to `ID_LIKE=…arch…`, so EndeavourOS/Manjaro/CachyOS work.
-- **`go install` for carapace/sesh logs its errors** to a file instead of
-  `/dev/null`, and the module versions are overridable via `CARAPACE_VERSION` /
-  `SESH_VERSION` (still defaulting to `latest` — see the note in `provision()`).
+- **`go install` for sesh logs its errors** to a file instead of `/dev/null`, and
+  the module version is overridable via `SESH_VERSION` (still defaulting to
+  `latest` — see the note in `provision()`). carapace is a printed `paru` hint and
+  takes no version override, per the analysis in
+  [#89](https://github.com/dotgibson/dotfiles-Arch/pull/89): `go install` cannot
+  work for any version of it. That error logging is what makes such a failure
+  visible in the first place — the old `/dev/null` form is precisely why the
+  carapace call could fail on every bootstrap without anyone noticing.
 - **A failed run now says where it failed** (`ERR` trap), and a successful one
   prints the wiring tally and points at `core-doctor`.
 - **`bootstrap.sh` installs the local `core/` pre-commit guard** on a fresh clone
