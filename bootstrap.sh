@@ -106,9 +106,10 @@ provision() {
   # ── the few core-doctor tools NOT in the official repos (AUR / Go) ──────────
   # carapace, sesh, op live only in the AUR (doggo moved into `extra` — it's in
   # packages.txt now). This bootstrap deliberately does NOT build an AUR helper
-  # (paru is a documented manual step below), so we install the two Go tools
-  # straight from source — best-effort, never fatal under `set -e`. If you
-  # already run paru, the native route is:
+  # (paru is a documented manual step below), so sesh is installed from source —
+  # best-effort, never fatal under `set -e`. carapace CANNOT be (see its block
+  # below) and is a printed hint instead, like viddy and op. If you already run
+  # paru, the native route is:
   #   paru -S carapace-bin sesh-bin 1password-cli
   # NOTE: `go install` drops binaries in $GOBIN (defaults to ~/go/bin), which is
   # NOT on the shell PATH (the Core shell layer prefixes ~/.local/bin + ~/.cargo/
@@ -130,8 +131,38 @@ provision() {
     return 0
   }
   blib_say "core-doctor extras not in Arch repos (best-effort via Go)"
-  _dotfiles_go_install github.com/carapace-sh/carapace-bin/cmd/carapace@latest carapace
   _dotfiles_go_install github.com/joshmedeski/sesh/v2@latest sesh   # /v2 module path is required
+  # carapace is AUR-only here, and — unlike sesh — CANNOT be go-installed at all. Two
+  # independent blockers, both properties of how the module is built rather than a break
+  # to wait out (core/PORTING-MATRIX.md ²⁷ carries the full story and the evidence):
+  #   1. Its go.mod carries `replace` directives, and `go install pkg@version` refuses any
+  #      module that does, because a replace would make the build differ from building it
+  #      as the main module.
+  #   2. The generated sources (pkg/{actions,conditions}/*_generated.go) are not committed;
+  #      cmd/carapace/main.go's `go:generate` lines produce them.
+  # Checked across the whole tag history: 184 of 184 tags (v0.0.3 2020-08-31 → v1.7.3
+  # 2026-06-30) carry a `replace`, and 0 commit the generated sources — so pinning an older
+  # @version does not help either. The old `_dotfiles_go_install ...carapace@latest` call
+  # here therefore failed on EVERY bootstrap, invisibly (the helper sends the explanation
+  # to /dev/null), and the run just never produced a carapace.
+  #
+  # A hint rather than an install, deliberately — and Arch is the one target where that is
+  # the RIGHT answer rather than a concession. Elsewhere in the fleet (Fedora/openSUSE/Kali)
+  # bootstrap installs upstream's release artifact, accepting that nothing then upgrades it.
+  # Here a real, upgradable package exists (AUR `carapace-bin`, which repackages that same
+  # upstream tarball and which `paru -Syu` refreshes), so lifting the binary out of the
+  # tarball by hand would be strictly worse: it lands in ~/.local/bin, which the Core shell
+  # layer puts AHEAD of /usr/bin, so a later `paru -S carapace-bin` would be silently
+  # shadowed by the stale hand-placed copy forever. Printing the hint keeps the one good
+  # path good. Same shape as viddy and op below.
+  #
+  # `carapace-bin` is the package to name, not `carapace`: the AUR carries both, and the
+  # bare `carapace` is a from-source build (x86_64 only, makedepends=go, and its build()
+  # runs the same `go generate` dance). `carapace-bin` provides/conflicts `carapace`, covers
+  # x86_64/aarch64/i686, and just installs the prebuilt binary.
+  if ! command -v carapace >/dev/null 2>&1; then
+    echo "   carapace: not found — install the AUR 'carapace-bin' pkg (e.g. 'paru -S carapace-bin') for shell completions. NOT 'go install': impossible for any version — see core/PORTING-MATRIX.md footnote 27"
+  fi
   # viddy (watch->viddy alias, HAVE_VIDDY-guarded) is a Rust CLI, AUR-only on Arch. This
   # bootstrap builds no AUR helper and installs no rust toolchain (see packages.txt), so
   # it's a manual step — like op below:
