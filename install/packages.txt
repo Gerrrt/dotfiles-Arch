@@ -29,12 +29,17 @@ xh             # HTTPie-style HTTP client (curl companion)
 doggo          # DNS client (now in `extra` — was AUR/go until 2025)
 go-yq          # yq — mikefarah's *Go* yq. Binary is `yq`. NOT the Arch `yq`
                # package, which is the unrelated Python jq-for-YAML tool.
-# The rest of core-doctor's set is not in the official repos: carapace + sesh are
-# go-installed best-effort by bootstrap.sh; op (1Password CLI) is AUR-only, so
-# bootstrap just prints the paru/install hint rather than installing it. viddy
-# (the watch replacement, HAVE_VIDDY-gated) is the same story — a Rust CLI that
-# lives only in the AUR, and since we build no AUR helper and install no rust
-# toolchain here, bootstrap prints `paru -S viddy` instead of installing it.
+# The rest of core-doctor's set is not in the official repos: sesh is go-installed
+# best-effort by bootstrap.sh; op (1Password CLI) is AUR-only, so bootstrap just
+# prints the paru/install hint rather than installing it. viddy (the watch
+# replacement, HAVE_VIDDY-gated) is the same story — a Rust CLI that lives only in
+# the AUR, and since we build no AUR helper and install no rust toolchain here,
+# bootstrap prints `paru -S viddy` instead of installing it. carapace is a printed
+# hint too, but for a stronger reason: `go install` cannot work for ANY version of
+# it (replace directives + uncommitted generated sources), and hand-placing the
+# upstream binary in ~/.local/bin would shadow a later `paru -S carapace-bin` —
+# see bootstrap.sh's carapace block, and core/PORTING-MATRIX.md's carapace footnote (²⁷
+# there — it reaches this vendored copy with the next Core sync; dotgibson/dotfiles-core#468).
 # Native route for all four, if you already run paru:
 #   paru -S carapace-bin sesh-bin 1password-cli viddy
 # The opt-in Core extras jujutsu/difftastic/ast-grep ARE in `extra` but are left
