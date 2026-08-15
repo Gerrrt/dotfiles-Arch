@@ -1,0 +1,61 @@
+# dotfiles-Arch/.gitattributes — line-ending policy for the OS-native layer.
+# ──────────────────────────────────────────────────────────────────────────────
+# WHY THIS FILE EXISTS SEPARATELY FROM core/.gitattributes:
+# gitattributes are DIRECTORY-SCOPED. The vendored core/.gitattributes governs
+# core/** and nothing else, so every file THIS repo owns — bootstrap.sh, os/*.zsh,
+# os/*.conf, os/*.gitconfig, install/packages.txt, ssh/config, wsl/wsl.conf — was
+# left to git's defaults. On a clone made from Windows (this repo lives on ext4 and
+# is reachable over \\wsl.localhost, where a Windows git reports core.autocrlf=true)
+# that means CRLF can be written into the working tree.
+#
+# The failure is the one core/.gitattributes already documents, one layer out: a
+# CRLF bootstrap.sh carries a trailing CR on its shebang line and dies with
+# "bad interpreter: No such file or directory". A CRLF ssh/config or wsl.conf is
+# worse — both parse, but the trailing \r lands INSIDE the values (an ssh
+# ControlPath with a \r, a WSL default user that does not exist), so they fail at
+# runtime rather than at load. None of it is visible to shellcheck or to the
+# lint gate: the files are valid text.
+#
+# NOTE (companion rule, not enforceable here): do git WRITE operations on this repo
+# from inside WSL, not from Windows over the UNC share. gitattributes fixes line
+# endings; it does not govern the executable bit, and a Windows-side git reads the
+# share as mode 0644 and would strip +x from bootstrap.sh and from every script
+# under core/ — which Core's audit asserts, and which changes HEAD:core's tree
+# object, so core-integrity.yml would then red every PR. See CLAUDE.md.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Default: normalize all detected-text files to LF in the index and on checkout.
+* text=auto eol=lf
+
+# ── Executable + sourced shell — MUST stay LF or the shebang/sourcing breaks ───
+*.sh        text eol=lf
+*.zsh       text eol=lf
+
+# ── The OS-native surface: parsed by ssh, WSL, tmux, git and pacman at runtime,
+#    where a stray \r is a silent wrong VALUE rather than a parse error. ────────
+ssh/config          text eol=lf
+wsl/wsl.conf        text eol=lf
+*.conf              text eol=lf
+*.gitconfig         text eol=lf
+install/*.txt       text eol=lf
+core.lock           text eol=lf
+
+# ── Repo meta ─────────────────────────────────────────────────────────────────
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.json      text eol=lf
+*.jsonc     text eol=lf
+*.toml      text eol=lf
+Makefile    text eol=lf
+LICENSE     text eol=lf
+
+# ── Binaries (defensive): never normalize, never diff as text ─────────────────
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.gz        binary
+*.zip       binary
