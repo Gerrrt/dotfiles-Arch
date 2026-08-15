@@ -134,7 +134,9 @@ provision() {
   _dotfiles_go_install github.com/joshmedeski/sesh/v2@latest sesh   # /v2 module path is required
   # carapace is AUR-only here, and — unlike sesh — CANNOT be go-installed at all. Two
   # independent blockers, both properties of how the module is built rather than a break
-  # to wait out (core/PORTING-MATRIX.md ²⁷ carries the full story and the evidence):
+  # to wait out. core/PORTING-MATRIX.md's carapace footnote carries the full story and the
+  # evidence — numbered ²⁷ there, and it lands in this vendored copy with the next Core
+  # sync; until then see dotgibson/dotfiles-core#468. The blockers:
   #   1. Its go.mod carries `replace` directives, and `go install pkg@version` refuses any
   #      module that does, because a replace would make the build differ from building it
   #      as the main module.
@@ -161,7 +163,7 @@ provision() {
   # runs the same `go generate` dance). `carapace-bin` provides/conflicts `carapace`, covers
   # x86_64/aarch64/i686, and just installs the prebuilt binary.
   if ! command -v carapace >/dev/null 2>&1; then
-    echo "   carapace: not found — install the AUR 'carapace-bin' pkg (e.g. 'paru -S carapace-bin') for shell completions. NOT 'go install': impossible for any version — see core/PORTING-MATRIX.md footnote 27"
+    echo "   carapace: not found — install the AUR 'carapace-bin' pkg (e.g. 'paru -S carapace-bin') for shell completions. NOT 'go install': impossible for any version — see dotgibson/dotfiles-core#468"
   fi
   # viddy (watch->viddy alias, HAVE_VIDDY-guarded) is a Rust CLI, AUR-only on Arch. This
   # bootstrap builds no AUR helper and installs no rust toolchain (see packages.txt), so
