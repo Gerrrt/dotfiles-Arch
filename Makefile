@@ -73,7 +73,7 @@ packages-check: ## Resolve every install/packages.txt name against the repos WIT
 	  echo "^^ renamed or dropped upstream (Arch is a ROLLING release) — check archlinux.org/packages"; fi; \
 	exit $$rc
 
-secrets: ## Scan the working tree for committed credentials (gitleaks)
+secrets: ## Scan the full git HISTORY for credentials (gitleaks — not just the working tree)
 	@command -v gitleaks >/dev/null 2>&1 || { \
 	  echo "gitleaks not installed. Core pins 8.30.1 in core/scripts/tool-versions.env:"; \
 	  echo "  go install github.com/gitleaks/gitleaks/v8@latest   # or: pacman -S gitleaks"; exit 1; }
