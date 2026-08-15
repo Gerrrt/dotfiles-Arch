@@ -1,0 +1,30 @@
+# .shellcheckrc — shellcheck configuration for dotfiles-Arch.
+# ──────────────────────────────────────────────────────────────────────────────
+# WHY THIS EXISTS SEPARATELY FROM core/.shellcheckrc: shellcheck discovers its rc
+# by searching UP from the file being checked, so core/.shellcheckrc applies to
+# core/**. bootstrap.sh sits at the repo ROOT and found NO rc at all — meaning a
+# local `shellcheck bootstrap.sh` behaved differently from CI, which passes its
+# suppressions via SHELLCHECK_OPTS in lint-call.yml. Local and CI now agree.
+#
+# `external-sources` + `source-path` let shellcheck FOLLOW bootstrap.sh's
+# `source "$DOTFILES/core/lib/bootstrap-lib.sh"` (via its `# shellcheck source=`
+# directives), so it can actually see blib_* / _blib_priv rather than reporting
+# them as unknown. This is what makes `shellcheck -x bootstrap.sh` meaningful.
+# ──────────────────────────────────────────────────────────────────────────────
+shell=bash
+external-sources=true
+source-path=SCRIPTDIR
+source-path=core/lib
+
+# Suppressions — kept in step with lint-call.yml's SHELLCHECK_OPTS so `make lint`
+# and the CI gate report identically. Each is a house-style decision, not a
+# blanket silencing:
+#   SC1090/SC1091 — sourcing a path shellcheck cannot resolve statically. The
+#                   vendored core/lib/*.sh are resolved via source-path above;
+#                   these cover the runtime-only cases.
+#   SC2015        — the `cmd && ok || warn` idiom, used deliberately throughout.
+#   SC2088        — a literal `~` inside a user-facing MESSAGE (not a path being
+#                   expanded), e.g. "would seed ~/.zshrc".
+# File-specific suppressions stay INLINE at their use site, as upstream requires:
+# they are not global truths and must not be hidden here.
+disable=SC1090,SC1091,SC2015,SC2088

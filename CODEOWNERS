@@ -1,0 +1,12 @@
+# CODEOWNERS — dotfiles-Arch.
+# A single catch-all owner is deliberate: this is a personal-but-public showcase
+# system with one author (same convention as dotfiles-core/CODEOWNERS).
+* @gerrrt
+
+# The vendored Core subtree is NOT authored here — it is a git-subtree copy of
+# dotfiles-core, overwritten on the next `make sync`. A PR touching these paths is
+# either a legitimate fan-out (authored upstream, landing via a sync/core-vX.Y.Z
+# branch) or a mistake. core-integrity.yml blocks the latter; this makes sure the
+# maintainer sees it either way.
+/core/     @gerrrt
+/core.lock @gerrrt

@@ -85,12 +85,18 @@ alias paclog='tail -n 50 /var/log/pacman.log'   # recent transactions (the "hist
 command -v checkupdates >/dev/null 2>&1 && alias pacout='checkupdates'
 
 # orphan removal — drop packages nothing depends on anymore.
+# ${(f)orphans} — the (f) flag splits on NEWLINES, which is required here and not
+# cosmetic: this is zsh, and zsh does NOT word-split unquoted parameters the way
+# bash does (SH_WORD_SPLIT is off, and nothing in Core or this layer sets it). A
+# bare `$orphans` therefore hands pacman the whole newline-joined list as ONE
+# argument and it fails with "target not found: pkg1\npkg2…". `zsh -n` — the only
+# zsh check in CI — cannot see this, because the syntax is perfectly valid.
 pacorphans() {
   local orphans; orphans="$(pacman -Qtdq 2>/dev/null)"
   if [[ -z "$orphans" ]]; then echo "no orphans 🎉"; return 0; fi
   echo "$orphans"
   echo "--- removing the above ---"
-  sudo pacman -Rns $orphans
+  sudo pacman -Rns ${(f)orphans}
 }
 
 # cache cleanup — keep the last N versions (paccache from pacman-contrib).
