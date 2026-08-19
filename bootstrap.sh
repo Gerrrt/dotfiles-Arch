@@ -264,7 +264,7 @@ provision() {
   # — and the run just never produced a carapace.
   #
   # A hint rather than an install, deliberately — and Arch is the one target where that is
-  # the RIGHT answer rather than a concession. Elsewhere in the fleet (Fedora/openSUSE/Kali)
+  # the RIGHT answer rather than a concession. Elsewhere in the fleet (Fedora/openSUSE/Debian)
   # bootstrap installs upstream's release artifact, accepting that nothing then upgrades it.
   # Here a real, upgradable package exists (AUR `carapace-bin`, which repackages that same
   # upstream tarball and which `paru -Syu` refreshes), so lifting the binary out of the
