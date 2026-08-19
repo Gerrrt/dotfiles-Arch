@@ -31,7 +31,7 @@ on:
     paths: ['install/packages.txt', 'Makefile', '.github/workflows/packages.yml']
   schedule:
     # Sun 07:00 UTC — a free fleet slot (web Sat 08:00, arch claude-routines Sat
-    # 10:00, core Tue, Defense Wed, htpx Thu, Kali Fri).
+    # 10:00, core Tue, Defense Wed, htpx Thu, Offense Fri).
     - cron: "0 7 * * 0"
   workflow_dispatch:
 
