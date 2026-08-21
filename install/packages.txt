@@ -58,6 +58,8 @@ lazygit        # git TUI  (in extra — no COPR needed, unlike Fedora)
 neovim
 git            # `git subtree` ships INSIDE this package on Arch — no separate pkg
 openssh        # ssh / ssh-keygen / ssh-agent — push via SSH (NOT shipped on minimal Arch)
+github-cli     # binary is `gh` — PRs/issues/releases from the terminal. Needs a
+               # one-time interactive `gh auth login`; bootstrap can't do that for you.
 
 # ── clipboard ─────────────────────────────────────────────────
 wl-clipboard   # wl-copy / wl-paste (Wayland)
