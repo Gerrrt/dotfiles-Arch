@@ -13,6 +13,123 @@ commit (`git tag -a vX.Y.Z -m vX.Y.Z`).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`jnv` is in Arch's `extra` now, so the matrix stopped sending Arch users to the AUR.**
+  (dotgibson/dotfiles-Arch#87) The package landed as `jnv` 0.7.1-1 on 2026-04-01; `pacman -Si
+  jnv` on a current box reports `Repository: extra`. The table's Arch cell said `AUR` and
+  footnote ¹⁷ prescribed `paru -S jnv`, which asked readers to build an AUR helper for a tool
+  `pacman` has been able to install for four months.
+
+  Footnote ²⁴ also used jnv as its yardstick for the worst packaging shape in the table —
+  lnav is "macOS-only in practice" _rather than jnv's "barely packaged anywhere" one_. With
+  brew and `extra` both carrying it that overstates the case, so the contrast is now the
+  narrower and still-true one: two platforms package jnv, everywhere else is `cargo`.
+
+  What has **not** changed is the decision underneath: jnv stays detect-only on Linux. It is
+  in no `install/packages.txt` and no `bootstrap.sh` installs it, so `HAVE_JNV` still lights
+  only for a box that opted in. Being packaged made the _instruction_ wrong, not the policy —
+  wiring it into the per-repo bootstrap remains the tracked follow-up it already was.
+
+- **`PORTING-MATRIX.md` no longer sends a reader to a row that isn't there, a `go install`
+  that builds the wrong major, or a shadowed `sg`.** (#431) The issue asked for an apt column
+  for Debian/Ubuntu distinct from Kali's; that landed with `dotfiles-Debian` in #505, and every
+  tool the issue measured on Ubuntu 24.04 now matches the column. What its noble provisioning
+  also exposed — and what this fixes — are three things that were wrong for the whole fleet,
+  not just apt boxes.
+
+  `core-doctor` probes `mise` and `uv`, and both have a `HAVE_*` flag, but neither had a row in
+  the package table — so for exactly those two the "install missing" hint's promise ("see
+  `core/PORTING-MATRIX.md` for the per-tool name and install path") resolved to nothing. They
+  have rows now, with a footnote (³⁰) for the chicken-and-egg `mise` creates: six other
+  footnotes prescribe `mise use -g <x>` as the fallback, and every `bootstrap.sh` reaches for
+  `mise exec go@latest` when no Go toolchain is present, so it is a prerequisite of the table
+  rather than an entry in it. `uv` turns out to be the sharpest argument for splitting the two
+  apt columns in the first place: kali-rolling ships `uv` 0.9.17 and Ubuntu 24.04 ships none.
+
+  The `go³` cells named no module paths, and the module path is usually not the repo URL. Four
+  of the six go-installable rows need a major-version suffix, a `cmd/` subpath, or both —
+  `github.com/joshmedeski/sesh/v2`, `github.com/mikefarah/yq/v4`, `mvdan.cc/sh/v3/cmd/shfmt`,
+  `github.com/mr-karan/doggo/cmd/doggo` — so a naive `go install <repo>@latest` fails or
+  silently builds an abandoned major. Footnote ³¹ now lists all of them, verified against each
+  project's own `go.mod`. That verification caught a live one: Charm has moved its tools off
+  GitHub as a module host, so `glow` is `charm.land/glow/v3` and `gum` is `charm.land/gum/v2`.
+  #431 reported `github.com/charmbracelet/glow/v2`, which was correct when it was filed and is
+  now two majors stale.
+
+  Footnote ¹¹ claimed `sg` "can collide with `setgroups`" and that ast-grep "shadows nothing".
+  Both were wrong. `sg(1)` is a symlink to `newgrp` — from `login` on the Debian family,
+  `shadow` elsewhere — and the `ast-grep` crate installs `sg` as a second binary. The second
+  claim was merely imprecise until #425, which put `${CARGO_HOME:-~/.cargo}/bin` on PATH ahead
+  of `/usr/bin`: on any box with a `cargo install`ed ast-grep, a bare `sg` now runs the search
+  tool instead of switching group. A hypothetical shadow became a real one, and the doc still
+  said it couldn't happen.
+
+- **A `cargo install`ed tool now gets its `HAVE_*` flag, its alias and its shell
+  integration — `core-doctor` and the flags no longer disagree about the same box.** (#425)
+  `zsh/00-tools.zsh` put only `~/.local/bin` on PATH before probing, and computed all 43
+  `HAVE_*` flags immediately after. The Rust bindir arrived far later — via the OS layer at
+  band 80, and via mise's activation 200 lines further down the same file — so anything
+  `cargo install` had written to `~/.cargo/bin` was simply invisible at detection time.
+  `core-doctor`, which probes live from an interactive prompt against the finished PATH,
+  saw it and printed `✓`. Same shell, two answers, and the flags were the ones that
+  mattered: `20-aliases.zsh` never made the alias.
+
+  That subset is not small — `PORTING-MATRIX.md` prescribes cargo as the source for
+  `procs`, `xh`, `atuin`, `ouch`, `jnv`, `ast-grep`, `watchexec`, `difft`, `viddy` and
+  `yazi` on distros that do not package them — and for atuin the failure was not cosmetic.
+  An unset `HAVE_ATUIN` means `atuin init zsh` never runs, so Ctrl+E is dead and **no
+  history is recorded at all**, while the doctor reports `✓ atuin` in the tool row and
+  `○ atuin (idle)` below it. That reads as "installed but idle" rather than "Core never
+  initialised it", which is why this could sit unnoticed.
+
+  All four per-user bindirs now join PATH before detection, not just cargo's: `~/.local/bin`,
+  `${CARGO_HOME:-~/.cargo}/bin`, `$GOBIN` (falling back to the **first** entry of `$GOPATH`,
+  which is a path list — expanding `$GOPATH/bin` against `/a:/b` would probe a nonexistent
+  `/a:/b/bin`), and `~/.atuin/bin`, which is where atuin's own installer writes and so had
+  the identical hole. The cargo and go dirs are resolved through their environment variables
+  rather than hard-coded, because rustup and go honour them and a box that relocates one
+  would otherwise keep missing its tools — hard-coding `~/.cargo/bin` does not fix this bug,
+  it moves it somewhere less obvious.
+
+  This is deliberately the same list, the same resolution and the same order as
+  `lib/bootstrap-lib.sh`'s `blib_user_bindirs_on_path`, which fixed the identical blind spot
+  on the bash side in v4.13.2: bootstrap's `command -v` guards and the shell's `HAVE_*`
+  probes must not be able to disagree about where a tool lives. Neither can source the other
+  — one is bash and runs before any Core shell exists — so both carry a note pointing at the
+  other. The order puts `~/.atuin/bin` ahead of `~/.local/bin`, matching
+  `examples/atuin-daemon.service` and the OS layers rather than inverting them, and a test
+  pins it so it stays a decision.
+
+  The OS layers' own prepends (`os/*.zsh`) become inert rather than duplicative — both sides
+  guard on `":$PATH:" != *":$d:"*`, so the later one simply finds the dir already there. They
+  can be dropped on their next pass; nothing breaks if they are not.
+
+  Nine hermetic cases cover it, each pinning `HOME` to a fixture and `PATH` to a stub dir:
+  the reported reproducer, the atuin variant, `CARGO_HOME`/`GOBIN`/`GOPATH` relocation,
+  idempotence, phantom-directory rejection, the ordering, and the disagreement itself
+  (`core-doctor --json` and `$HAVE_PROCS` asserted to agree). All nine are red against the
+  previous `00-tools.zsh`. They neutralise an inherited `CARGO_HOME`/`GOBIN`/`GOPATH` for the
+  reason v4.13.2 records: the resolution exists so a relocated dir still works, so a
+  developer who exports one retargets the lookup and reds a healthy tree while no CI runner
+  — none of which export it — ever sees the failure.
+
+  Worth noting what this does **not** fix, and #425 says so explicitly: `HAVE_*` is still a
+  snapshot taken at band 00, while PATH keeps being assembled through band 99. mise's
+  `hook-env` rewrites it per directory, and `80-os.zsh`, an `85-*` role and `99-local.zsh`
+  all load after every probe, so a tool contributed by any of those still gets no flag while
+  the doctor reports it present. A `✓` still means "on PATH when you asked", not "Core wired
+  this". That half is tracked separately.
+
+- **`PORTING-MATRIX.md` footnote ⁸ no longer tells the reader `dnf install jujutsu` works.**
+  It listed Fedora among the distros that package jj. Fedora does not: there is no
+  `jujutsu`, `jj` or `jj-cli` on F43, F44 or rawhide, and — unlike `sd` and `gron`, which
+  were dropped — no retired build to point back at. Fedora now sits with Debian/Kali and
+  Gentoo in the `cargo install --locked jj-cli` group. Documentation-only: jj is opt-in and
+  carried in no OS repo's `packages.txt`, so nothing installs differently — but the footnote
+  is the one place a reader looks for the install path, and it named a package manager that
+  would have answered "No match".
+
 ## [v4.13.2] - 2026-08-19
 
 ### Fixed
