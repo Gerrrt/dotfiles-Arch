@@ -1,17 +1,12 @@
-# .editorconfig — house style for dotfiles-Arch.
-# https://editorconfig.org — honored natively by Neovim (this repo's editor),
-# VS Code, and most others.
-#
-# core/.editorconfig sets `root = true`, but EditorConfig resolution walks UP from
-# the file being edited, so that copy governs core/** and stops there. Without this
-# file the repo's OWN surface (bootstrap.sh, os/*.zsh, the workflows) had no style
-# at edit time. Kept deliberately in step with core/.editorconfig so a contributor
-# moving between the two layers never retrains their fingers.
-#
-# As upstream: shfmt is NOT enforced (it would expand the deliberate compact
-# one-liner style in bootstrap.sh's arg loop); the enforced check is shellcheck.
+# .editorconfig — house style for dotfiles-core.
+# https://editorconfig.org  — honored natively by Neovim (this repo's editor),
+# VS Code, and most others. This file is the single enforcer of indentation in
+# the multi-language tree (bash, zsh, lua, toml, yaml): it keeps everything on one
+# consistent 2-space style at edit time. NB: neither shfmt nor stylua is wired
+# into CI or pre-commit (shfmt would expand the deliberate compact one-liner
+# style — see scripts/audit-core.sh); the enforced checks are shellcheck + luacheck
+# (real bugs) plus the behavioral/manifest audit. Formatting stays editorconfig.
 root = true
-
 [*]
 charset = utf-8
 end_of_line = lf
@@ -19,26 +14,20 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
-
-# Shell — 2-space (shfmt intentionally not enforced; this just keeps edits 2-space).
+# Shell — 2-space (shfmt is intentionally NOT enforced; this just keeps edits 2-space).
 [*.{sh,zsh}]
 indent_size = 2
-
-[*.{toml,yml,yaml,json,jsonc}]
+# Lua (Neovim config) — 2-space; luacheck (run from nvim/) is the enforced linter.
+[*.lua]
 indent_size = 2
-
+[*.{toml,yml,yaml}]
+indent_size = 2
 # Markdown: trailing whitespace can be a meaningful hard line break.
 [*.md]
 trim_trailing_whitespace = false
-
 # tmux/git configs follow upstream conventions.
 [*.{conf,gitconfig}]
 indent_size = 2
-
-# ssh_config(5) and wsl.conf are parsed at runtime by ssh/WSL — leave them alone.
-[{ssh/config,wsl/wsl.conf}]
-indent_size = 2
-
 # Makefile — recipe lines REQUIRE real tabs; override the global space rule.
 [Makefile]
 indent_style = tab
