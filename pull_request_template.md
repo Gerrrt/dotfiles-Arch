@@ -1,35 +1,36 @@
-<!-- This is the Arch OS-NATIVE layer. The shared Core lives in dotfiles-core and
-     is vendored here read-only under core/ — see the boundary check below. -->
+<!-- Core fans out to all 9 OS repos via git subtree — a defect here is an N-way
+     defect. Keep changes truly Core, and green before merge. -->
 
 ## What & why
 
-<!-- One or two lines. What changed in the Arch layer, and why. -->
+<!-- One or two lines. What changed in the Core layer, and why. -->
 
-## Boundary check
+## Linked issue
 
-- [ ] I did **not** hand-edit `core/` (it is a `git subtree` copy of `dotfiles-core`,
-      overwritten on the next `make sync`; fix it upstream, then fan out)
-- [ ] The change is genuinely **Arch-specific** — if it would be identical on every
-      distro it belongs in Core; if it changes with the operator it belongs in a role repo
+<!-- A `fix(…)` PR must close an issue or say why it doesn't — pr-link-check enforces
+     this. Use a CLOSING KEYWORD below (closes/fixes/resolves); "Refs #420" reads like
+     a link but closes nothing, so the issue would stay open after merge.
 
-## Checks
+       Closes #420
 
-- [ ] `make lint` is green (same shellcheck/`bash -n`/`zsh -n` gate CI runs)
-- [ ] If `install/packages.txt` changed: `make packages-check` resolves every name
-- [ ] If `bootstrap.sh` changed: `./bootstrap.sh --dry-run` previews correctly, and
-      the change was exercised on a real Arch box or container (CI only covers
-      `--links-only`, never `provision()`)
-- [ ] `CHANGELOG.md` updated under `[Unreleased]` for any user-visible change,
-      with a [Conventional Commits](https://www.conventionalcommits.org/) message
+     No issue behind it? Replace the line above with a reason, e.g.
 
-## Arch-specific gotchas
+       No-Issue: found and fixed in one pass, never filed
 
-<!-- Delete what does not apply. -->
+     Editing this body re-runs the check. -->
 
-- [ ] No `pacman -Sy <pkg>` was introduced anywhere (partial-upgrade footgun — the
-      only sanctioned `-Sy` in this repo is the `archlinux-keyring` refresh in SETUP.md)
-- [ ] Anything AUR-only is a documented `paru -S …` hint, not an automated build
+## Is it actually Core?
+
+- [ ] Identical on every machine — **not** OS-specific (pkg manager, paths, clipboard → the OS repo)
+- [ ] **Not** offensive/engagement tooling (→ `dotfiles-Offense`)
+
+## Contract & checks
+
+- [ ] If a Core file was added/removed, `core.manifest` was updated in the same change
+- [ ] `make audit` is green locally (manifest ↔ fs, exec-bits, syntax, lint, behavioral)
+- [ ] Exec-bits correct: scripts `+x`, `zsh/*.zsh` modules **not** executable
+- [ ] If a new file needs a symlink, each OS repo's `bootstrap.sh` was noted/updated
 
 ## Notes
 
-<!-- Anything reviewers should know: WSL vs bare-metal implications, follow-up sync, etc. -->
+<!-- Anything reviewers should know: load-order implications, follow-up sync, etc. -->
