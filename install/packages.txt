@@ -64,7 +64,9 @@ wl-clipboard   # wl-copy / wl-paste (Wayland)
 xclip          # X11 fallback (sessions / SSH X-forward)
 
 # ── build toolchain (AUR builds, makepkg, native modules) ─────
-base-devel     # group: gcc/make/etc. Needed to build an AUR helper (paru/yay).
+base-devel     # metapackage — a *package* since 2022, not a group. Its 26 deps
+               # ride along on `pacman -Syu`; a group's members would not have.
+               # Needed to build an AUR helper (paru/yay).
 # NOTE: language runtimes (rust/node/python/...) are owned by mise — see
 # core/mise/config.toml. We do NOT install `rust` from pacman here because the
 # whole CLI stack above is already packaged, so nothing needs `cargo` to build.
