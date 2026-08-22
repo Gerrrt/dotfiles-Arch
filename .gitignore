@@ -16,9 +16,11 @@
 zsh/99-local.zsh
 zsh/local.zsh
 
-# ── private SSH material — track ssh/config only, never keys ──────────────────
+# ── private SSH material — deny-by-default; nothing here is tracked any more. The
+#    client config moved into Core (dotgibson/dotfiles-core#450) as core/ssh/config.
+#    Keep the rule: a key dropped here stays untracked unless deliberately
+#    allowlisted. An OS-specific need is ssh/os.conf and needs its own ! line. ──
 ssh/*
-!ssh/config
 
 # ── credentials / key material (defence in depth) ─────────────────────────────
 # ssh/* above only covers that one directory. These catch key material dropped
