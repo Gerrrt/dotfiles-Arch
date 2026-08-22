@@ -28,8 +28,7 @@ Entries below therefore cover the **Arch OS-native layer only**: `bootstrap.sh`,
   supported `BLIB_DRY` end-to-end all along; this layer simply never exposed it.
 - **Root `Makefile`** — `lint`, `bootstrap-dry`, `packages-check`, `secrets`,
   `core-lock`, `core-verify`. `lint` reproduces the CI gate exactly, so a failure
-  is visible before pushing. This also makes `core.lock`'s own header instruction
-  (“Regenerate … with: `make core-lock`”) true for the first time.
+  is visible before pushing.
 - **`packages` workflow** — resolves every `install/packages.txt` name against the
   Arch repos on PR and weekly, without installing. Nothing previously checked the
   package list, on a rolling release where renames are routine.
@@ -65,6 +64,23 @@ Entries below therefore cover the **Arch OS-native layer only**: `bootstrap.sh`,
   (`direnv` is installed by `packages.txt` and hooked into every shell).
 
 ### Changed
+
+- **`make core-lock` no longer regenerates `core.lock`; it explains why and points at the
+  fan-out.** (dotgibson/dotfiles-core#593) The target was added here to satisfy
+  `core.lock`'s own header instruction, “Regenerate … with: `make core-lock`”. That
+  instruction was the bug — Core removed it in dotfiles-core#454, because `core.lock` is
+  written by `sync-core.sh` in the same commit as the subtree pull and was never meant to
+  have a second writer.
+
+  Keeping the generator meant this repo owned a second definition of a format Core owns,
+  and it had already drifted from it in three ways: it hardcoded `core_branch=main`, so
+  regenerating a lock that had been pinned to a released commit silently replaced that
+  provenance with a branch name; it re-emitted the removed header line, reintroducing the
+  very instruction it existed to satisfy; and it predates dotfiles-core#453, which renamed
+  the field to `core_ref` — so running it now would emit a lock the rest of the fleet
+  disagrees with.
+
+  `core-verify` is unchanged and remains the way to check this repo's vendored `core/`.
 
 - **Privilege escalation goes through the library's `_blib_priv`**, honouring
   `BLIB_SU`, instead of a hardcoded `sudo`. This makes `bootstrap.sh` work as root
