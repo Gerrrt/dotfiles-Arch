@@ -3,14 +3,14 @@
 # WHY THIS FILE EXISTS SEPARATELY FROM core/.gitattributes:
 # gitattributes are DIRECTORY-SCOPED. The vendored core/.gitattributes governs
 # core/** and nothing else, so every file THIS repo owns — bootstrap.sh, os/*.zsh,
-# os/*.conf, os/*.gitconfig, install/packages.txt, ssh/config, wsl/wsl.conf — was
+# os/*.conf, os/*.gitconfig, install/packages.txt, wsl/wsl.conf — was
 # left to git's defaults. On a clone made from Windows (this repo lives on ext4 and
 # is reachable over \\wsl.localhost, where a Windows git reports core.autocrlf=true)
 # that means CRLF can be written into the working tree.
 #
 # The failure is the one core/.gitattributes already documents, one layer out: a
 # CRLF bootstrap.sh carries a trailing CR on its shebang line and dies with
-# "bad interpreter: No such file or directory". A CRLF ssh/config or wsl.conf is
+# "bad interpreter: No such file or directory". A CRLF wsl.conf is
 # worse — both parse, but the trailing \r lands INSIDE the values (an ssh
 # ControlPath with a \r, a WSL default user that does not exist), so they fail at
 # runtime rather than at load. None of it is visible to shellcheck or to the
@@ -33,7 +33,6 @@
 
 # ── The OS-native surface: parsed by ssh, WSL, tmux, git and pacman at runtime,
 #    where a stray \r is a silent wrong VALUE rather than a parse error. ────────
-ssh/config          text eol=lf
 wsl/wsl.conf        text eol=lf
 *.conf              text eol=lf
 *.gitconfig         text eol=lf

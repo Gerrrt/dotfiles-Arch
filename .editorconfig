@@ -35,8 +35,9 @@ trim_trailing_whitespace = false
 [*.{conf,gitconfig}]
 indent_size = 2
 
-# ssh_config(5) and wsl.conf are parsed at runtime by ssh/WSL — leave them alone.
-[{ssh/config,wsl/wsl.conf}]
+# wsl.conf is parsed at runtime by WSL — leave it alone. (ssh/config was here too until
+# the client config moved into Core; core/ has its own .editorconfig.)
+[wsl/wsl.conf]
 indent_size = 2
 
 # Makefile — recipe lines REQUIRE real tabs; override the global space rule.

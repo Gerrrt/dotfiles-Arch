@@ -29,7 +29,8 @@ things actually worth reporting are:
   `_blib_priv` / `sudo`.
 - **Destructive behaviour** — a path where bootstrap overwrites or deletes user data
   without the documented `.pre-dotfiles.<epoch>` backup.
-- **Weakened SSH posture** in [`ssh/config`](ssh/config) — a downgraded algorithm list,
+- **Weakened SSH posture** in `core/ssh/config` (upstream in
+  [dotfiles-core](https://github.com/dotgibson/dotfiles-core)) — a downgraded algorithm list,
   or a `StrictHostKeyChecking`/`UserKnownHostsFile` relaxation escaping the commented
   throwaway-lab template into an active block.
 - **Supply chain** — the unpinned `go install` of `carapace`/`sesh` in `provision()`
@@ -42,9 +43,11 @@ things actually worth reporting are:
 
 No secrets are committed, and the layout is designed so they cannot be:
 
-- **SSH keys are never tracked.** `.gitignore` allowlists exactly one file
-  (`ssh/*` ignored, `!ssh/config`). `bootstrap.sh` creates `~/.ssh` and
-  `~/.ssh/sockets` as `0700` and the config as `0600`.
+- **SSH keys are never tracked.** `.gitignore` ignores `ssh/*` outright — this repo now
+  tracks nothing there, since the client config lives in Core. `blib_link_core` creates
+  `~/.ssh`, `~/.ssh/sockets` and `~/.ssh/config.d` as `0700`. It no longer chmods the
+  config file itself: ssh only refuses a config that is group/world *writable*, and git
+  checks out `0644` (dotgibson/dotfiles-core#450).
 - **Git identity is never tracked.** `core/git/local.gitconfig.example` is *copied*
   once to `~/.config/git/local.gitconfig` (never symlinked, never relinked), so your
   name/email/signing key stay off the repo.
