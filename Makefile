@@ -79,7 +79,21 @@ secrets: ## Scan the full git HISTORY for credentials (gitleaks — not just the
 	@command -v gitleaks >/dev/null 2>&1 || { \
 	  echo "gitleaks not installed. Core pins 8.30.1 in core/scripts/tool-versions.env:"; \
 	  echo "  go install github.com/gitleaks/gitleaks/v8@latest   # or: pacman -S gitleaks"; exit 1; }
-	@gitleaks detect --source . --redact --verbose
+	@# -c core/gitleaks.toml — ONE POLICY FILE, Core's, the rule Core's own reusable
+	@# lint-call.yml secrets leg states: every repo measured the same way, no repo widening
+	@# its own allowlist. The stock rule set is not stricter, it is differently wrong —
+	@# several defaults match on credential-shaped POSITION rather than content
+	@# (curl-auth-user fires on anything after `curl -u`), so a variable reference, which is
+	@# the SECURE shape because the value never enters the file, was reported as a leak.
+	@# Concretely: vendored core/CHANGELOG.md documents that allowlist and quotes the example
+	@# it was written for, so the stock scan flagged Core's explanation of the rule as a
+	@# violation of it, on a sync carrying no credential. That matters more here than in a
+	@# working-tree scan: this target reads full HISTORY, and a false positive there cannot
+	@# be fixed forward — only by a rewrite — so it would wedge the gate permanently.
+	@# Not a blinding — the allowlist is scoped to the matched VALUE, not a path, rule or
+	@# repo. Verified both ways with the pinned 8.30.1: the variable-reference form passes,
+	@# a literal `curl -sk -u admin:<value>` in the same position still fails.
+	@gitleaks detect --source . -c core/gitleaks.toml --redact --verbose
 
 core-lock: ## Explain why core.lock is NOT regenerated here (it is written by Core's fan-out)
 	@echo "core.lock is not regenerated in this repo."
