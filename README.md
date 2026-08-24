@@ -74,11 +74,11 @@ template per the [porting matrix][porting]. The full docs live on the
 
 The system is three layers, each building on the one below:
 
-| Layer | Lives in | Owns |
-| --- | --- | --- |
-| **Core** | [`dotfiles-core`](https://github.com/dotgibson/dotfiles-core) → vendored into every OS repo's `core/` | zsh, tmux, nvim, git, starship — identical everywhere |
-| **OS-native** | `dotfiles-{MacBook,Windows,Fedora,Arch,Debian,openSUSE,Alpine,Gentoo}` (this repo among them) | package manager, clipboard, paths |
-| **Role** | `dotfiles-Offense`, `dotfiles-Defense` | offensive / defensive tooling |
+| Layer         | Lives in                                                                                              | Owns                                                  |
+| ------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **Core**      | [`dotfiles-core`](https://github.com/dotgibson/dotfiles-core) → vendored into every OS repo's `core/` | zsh, tmux, nvim, git, starship — identical everywhere |
+| **OS-native** | `dotfiles-{MacBook,Windows,Fedora,Arch,Debian,openSUSE,Alpine,Gentoo}` (this repo among them)         | package manager, clipboard, paths                     |
+| **Role**      | `dotfiles-Offense`, `dotfiles-Defense`                                                                | offensive / defensive tooling                         |
 
 ### Languages
 
