@@ -171,12 +171,12 @@ own for the full list.
 Copy this file into the new repo and change **only Stage 0** — Stages 1–4 are
 distro-agnostic. The per-distro essentials:
 
-| Distro | install prereqs | privilege tool + grant | create user |
-|---|---|---|---|
-| **Arch** | `pacman -S git base-devel sudo` | `sudo`, `/etc/sudoers.d/` | `useradd -m -G wheel` |
-| **openSUSE** | `zypper in git-core sudo` | `sudo`, `/etc/sudoers.d/` | `useradd -m -G wheel` |
-| **Alpine** | `apk add git doas` | **`doas`**, `/etc/doas.d/` (`permit persist :wheel`) | `adduser` + `addgroup` (busybox); default shell is `ash` |
-| **Gentoo** | `emerge dev-vcs/git app-admin/sudo` | `sudo`, `/etc/sudoers.d/` | `useradd -m -G wheel` (expect emerge compile time) |
+| Distro       | install prereqs                     | privilege tool + grant                               | create user                                              |
+| ------------ | ----------------------------------- | ---------------------------------------------------- | -------------------------------------------------------- |
+| **Arch**     | `pacman -S git base-devel sudo`     | `sudo`, `/etc/sudoers.d/`                            | `useradd -m -G wheel`                                    |
+| **openSUSE** | `zypper in git-core sudo`           | `sudo`, `/etc/sudoers.d/`                            | `useradd -m -G wheel`                                    |
+| **Alpine**   | `apk add git doas`                  | **`doas`**, `/etc/doas.d/` (`permit persist :wheel`) | `adduser` + `addgroup` (busybox); default shell is `ash` |
+| **Gentoo**   | `emerge dev-vcs/git app-admin/sudo` | `sudo`, `/etc/sudoers.d/`                            | `useradd -m -G wheel` (expect emerge compile time)       |
 
 For the full package-manager command equivalents (refresh/upgrade/install/
 search/owns-file) and package-name table, see `PORTING-MATRIX.md` in
