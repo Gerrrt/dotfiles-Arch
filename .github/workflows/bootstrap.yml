@@ -4,12 +4,15 @@
 # the deps bootstrap needs. See dotfiles-core/.github/workflows/bootstrap-test.yml.
 name: bootstrap
 
+# NO path filters, deliberately — `test / links-only` is a REQUIRED status check on main.
+# A filtered-out required check never reports, so GitHub blocks the PR indefinitely waiting
+# for a result that will never arrive. The links-only run is a couple of minutes; the
+# deadlock is forever. Same note as dotfiles-Fedora's bootstrap.yml, which removed its
+# filters for exactly this reason.
 on:
   pull_request:
-    paths: ['bootstrap.sh', 'core/**', 'os/**', 'ssh/**', 'install/**', '.github/workflows/bootstrap.yml']
   push:
     branches: [main]
-    paths: ['bootstrap.sh', 'core/**', 'os/**', 'ssh/**', 'install/**', '.github/workflows/bootstrap.yml']
   workflow_dispatch:
   # For packages-check ONLY, and it is the reason that job is worth having. A package
   # rename or drop upstream breaks this repo's list with NOBODY having edited the repo,
