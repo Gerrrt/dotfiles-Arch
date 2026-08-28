@@ -23,6 +23,17 @@ Entries below therefore cover the **Arch OS-native layer only**: `bootstrap.sh`,
 
 ### Added
 
+- **`os/arch.capabilities`** — this repo's Core v5 capability declaration
+  (dotgibson/dotfiles-core#663, #667). Core's `up`, maint runner and `core-doctor` now
+  dispatch through it rather than through package-manager branches inside portable Core
+  modules. `PKG_COUNT_PENDING` is `checkupdates` (from `pacman-contrib`, already in
+  `install/packages.txt`), which syncs a copy of the database in user space and never
+  touches the real sync DB. **`PKG_ASSUME_YES`, `PKG_UPGRADE_PARTIAL` and
+  `MAINT_UNATTENDED_UPGRADE` are deliberately absent**: each omission is a safety
+  statement Core honours exactly, so `up -i` refuses a partial upgrade and the scheduled
+  runner refuses to upgrade this rolling distro unattended. Do not add them.
+- **`make capabilities`** — validates `os/*.capabilities` against Core's schema via the
+  vendored `core/scripts/check-capabilities.sh`, and runs as part of `make lint`.
 - **`bootstrap.sh --dry-run`** — previews the entire run (package plan + symlink
   plan + `/etc/wsl.conf` handling) and changes nothing. The shared library has
   supported `BLIB_DRY` end-to-end all along; this layer simply never exposed it.

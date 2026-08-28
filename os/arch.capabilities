@@ -1,0 +1,67 @@
+# os/arch.capabilities — the Arch capability declaration (Core v5, #663/#667).
+# ──────────────────────────────────────────────────────────────────────────────
+# Read (never sourced) by Core's zsh/02-capabilities.zsh into $_CORE_CAP, and by
+# maint/dotfiles-maint.sh, which is bash. bootstrap.sh links it to
+# $ZDOTDIR/os.capabilities via blib_link_os_layer.
+#
+# Transcribed from core/PORTING-MATRIX.md §"Package-manager commands", Arch column.
+# Validate with:  core/scripts/check-capabilities.sh os/arch.capabilities
+#
+# THREE KEYS ARE ABSENT ON PURPOSE (PKG_ASSUME_YES, PKG_UPGRADE_PARTIAL,
+# MAINT_UNATTENDED_UPGRADE) and each absence is a SAFETY DECLARATION the schema
+# honours exactly. Do not add one to be helpful — see the notes at each.
+#
+# A `#` INSIDE A VALUE IS NOT A COMMENT — the reader keeps it. Notes go above.
+
+# ── package-manager verbs (all required) ──────────────────────────────────────
+# LISTED FOR COMPLETENESS, and deliberately NOT aliased anywhere in os/arch.zsh
+# (PORTING-MATRIX.md footnote ²³). A bare `-Sy` is safe alone; `-Sy` followed by an
+# install is THE partial-upgrade footgun. Core only ever runs this as the refresh
+# verb, never as a prefix to an install, which is the one context where it is safe.
+PKG_REFRESH=sudo pacman -Sy
+PKG_UPGRADE=sudo pacman -Syu
+PKG_INSTALL=sudo pacman -S --noconfirm
+PKG_REMOVE=sudo pacman -Rns --noconfirm
+PKG_SEARCH=pacman -Ss
+PKG_OWNS=pacman -Qo
+# checkupdates, not `pacman -Qu`: it syncs a copy of the database in USER SPACE and
+# never touches the real sync DB, which is what makes counting safe on a rolling
+# distro. It comes from pacman-contrib, which install/packages.txt installs
+# unconditionally — so naming it here is a promise this repo actually keeps.
+#
+# --packages WARNS ON THIS LINE AND THE WARNING IS CORRECT TO IGNORE: the validator
+# compares the leading BINARY against PACKAGE names, and here they differ
+# (checkupdates ships in pacman-contrib). It is a warning and not a failure for
+# exactly this case.
+PKG_COUNT_PENDING=checkupdates
+# checkupdates prints `name oldver -> newver`, one per line: default match and
+# field 1 are correct.
+
+# ── scheduler (required) ──────────────────────────────────────────────────────
+SCHEDULER=systemd
+SCHEDULER_UNIT_DIR=~/.config/systemd/user
+
+# ── how `up` applies ──────────────────────────────────────────────────────────
+# NO PKG_UPGRADE_PRE: `-Syu` refreshes and upgrades in one verb, so a separate
+# refresh would be the partial-upgrade window this repo exists to avoid.
+#
+# NO PKG_ASSUME_YES. pacman's transaction summary is the last thing standing between
+# an operator and a 400-package rebuild that replaces a kernel; `up -y` therefore
+# behaves like `up` here and lets pacman ask for itself.
+#
+# NO PKG_UPGRADE_PARTIAL, AND THIS IS THE IMPORTANT ONE. Arch does not support
+# upgrading a subset — `pacman -S <pkg>` against a freshly synced DB is precisely
+# how a box ends up with mismatched libraries. `up -i` REFUSES on an archive that
+# declares no partial verb, which is how this repo says "this must update as a
+# whole". Declaring one would turn that refusal into a footgun.
+
+# ── the scheduled runner ──────────────────────────────────────────────────────
+# NO MAINT_UNATTENDED_UPGRADE. A rolling distro that half-upgrades unattended is how
+# you get a box that will not boot, and nobody is watching a 03:00 timer when it
+# happens. This replaces the `have pacman || have emerge` probe Core used to run —
+# which tested for a BINARY standing in for a claim about a DISTRO. Apply with `up`.
+
+# ── optional tools ────────────────────────────────────────────────────────────
+# NO TOOLS_OPTIN. PORTING-MATRIX.md's ²¹ cells show Arch PACKAGES jj and ast-grep in
+# the official repositories, so there is no delta from Core's _CORE_DOCTOR_OPTIN
+# default and a declared list would be a copy that can only drift.
