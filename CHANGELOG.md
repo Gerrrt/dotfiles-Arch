@@ -23,6 +23,17 @@ Entries below therefore cover the **Arch OS-native layer only**: `bootstrap.sh`,
 
 ### Added
 
+- **`make markdown`, wired into `make lint`.** `lint-call.yml`'s markdown leg has been
+  **blocking** since dotgibson/dotfiles-core#592, but this repo had no local target for
+  it — a required check nobody could run before pushing, and a `.markdownlint.jsonc` only
+  CI ever read. `MD_FILES` uses the gate's own pathspec
+  (`git ls-files '*.md' ':!:core/**'`), so the local run scans exactly what CI scans,
+  recursively — a `'*.md'` glob would be top-level only and miss
+  `pull_request_template.md`. All seven files already pass, so nothing rides along.
+  It **skips** when `markdownlint-cli2` is absent rather than failing like the shellcheck
+  arm: shellcheck is a pacman package, so missing means a box to fix, while
+  markdownlint-cli2 is npm-only. Part of the fleet sweep in dotgibson/dotfiles-core#775.
+
 - **`os/arch.capabilities`** — this repo's Core v5 capability declaration
   (dotgibson/dotfiles-core#663, #667). Core's `up`, maint runner and `core-doctor` now
   dispatch through it rather than through package-manager branches inside portable Core
