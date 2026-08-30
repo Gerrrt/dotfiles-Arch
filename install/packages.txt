@@ -51,6 +51,10 @@ starship       # prompt   (Fedora installs this from upstream; Arch packages it)
 atuin          # shell history
 yazi           # file manager
 mise           # polyglot runtime manager (node/python/go/...). `pacman -S mise`
+uv             # Astral per-project Python (`.venv` + tool runner). Pairs with mise
+               # above: mise owns the GLOBAL interpreter, uv the per-project envs —
+               # see core/mise/config.toml. Core probes it (HAVE_UV → uvr/uvs) and
+               # core-doctor treats it as REQUIRED, not opt-in: absent, it's a `✗`.
 lazygit        # git TUI  (in extra — no COPR needed, unlike Fedora)
 
 # ── editor + git workflow ─────────────────────────────────────
