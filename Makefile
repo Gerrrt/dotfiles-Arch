@@ -17,7 +17,7 @@
 # strip the exec bit off every script. See .gitattributes.
 # ──────────────────────────────────────────────────────────────────────────────
 .DEFAULT_GOAL := help
-.PHONY: help lint bootstrap-dry packages-check secrets core-lock core-verify capabilities
+.PHONY: help lint markdown bootstrap-dry packages-check secrets core-lock core-verify capabilities
 
 # bash explicitly, not make's default /bin/sh: packages-check SOURCES
 # core/lib/bootstrap-lib.sh, which is bash (arrays, [[ ]]). Arch happens to point
@@ -33,6 +33,10 @@ CORE_REPO ?= $(CURDIR)/../dotfiles-core
 # because it is gated upstream by dotfiles-core's own CI.
 SH_FILES   = $(shell git ls-files '*.sh' ':!:core/**')
 ZSH_FILES  = $(shell git ls-files '*.zsh' ':!:core/**')
+# Same pathspec again, and it is the one lint-call.yml's markdown leg uses — so `make
+# markdown` scans exactly what the blocking gate scans, recursively (a '*.md' glob would
+# be top-level only and miss pull_request_template.md).
+MD_FILES   = $(shell git ls-files '*.md' ':!:core/**')
 export SHELLCHECK_OPTS = -e SC1090 -e SC1091 -e SC2015 -e SC2088
 
 help: ## Show this help
@@ -42,7 +46,7 @@ help: ## Show this help
 	@echo
 	@echo "  Core's audit/sync live upstream in dotfiles-core (core/ is vendored, read-only here)."
 
-lint: capabilities ## shellcheck + bash -n on repo-owned *.sh, zsh -n on repo-owned *.zsh (== the CI gate)
+lint: capabilities markdown ## shellcheck + bash -n on repo-owned *.sh, zsh -n on repo-owned *.zsh, markdownlint on repo-owned *.md (== the CI gate)
 	@rc=0; \
 	if [ -z "$(SH_FILES)" ]; then echo "no repo-owned .sh"; else \
 	  if command -v shellcheck >/dev/null 2>&1; then \
@@ -56,6 +60,23 @@ lint: capabilities ## shellcheck + bash -n on repo-owned *.sh, zsh -n on repo-ow
 	  else echo "!! zsh not installed — cannot syntax-check $(ZSH_FILES)"; rc=1; fi; \
 	fi; \
 	[ $$rc -eq 0 ] && echo "lint OK" || echo "lint FAILED"; exit $$rc
+
+# Markdown had no local gate at all, while lint-call.yml's markdown leg has been BLOCKING
+# since dotgibson/dotfiles-core#592 — a required check nobody could run before pushing.
+# .markdownlint.jsonc has always been here; until now only CI ever read it.
+#
+# This SKIPS when the linter is absent, unlike the shellcheck arm above which sets rc=1.
+# The difference is deliberate: shellcheck is a pacman package, so "not installed" is a
+# box that needs fixing; markdownlint-cli2 is npm-only with no reliable repo package, so
+# failing on its absence would red `make lint` on most boxes for something the author
+# cannot cheaply fix. The message names CI as the remaining gate rather than implying
+# coverage. ONE recipe line, so the `exit 0` skips the whole target and not just its
+# first line (dotgibson/dotfiles-core#775).
+markdown: ## markdownlint the repo-owned *.md against .markdownlint.jsonc (skips if absent)
+	@if ! command -v markdownlint-cli2 >/dev/null 2>&1; then \
+	  echo "!! markdownlint-cli2 not installed — skipping (npm i -g markdownlint-cli2; CI still enforces it)"; \
+	elif [ -z "$(MD_FILES)" ]; then echo "no repo-owned .md"; \
+	else echo "markdownlint-cli2 $(MD_FILES)"; markdownlint-cli2 $(MD_FILES); fi
 
 bootstrap-dry: ## Preview a full bootstrap (symlink plan + package plan), changing nothing
 	@./bootstrap.sh --dry-run
