@@ -23,6 +23,30 @@ Entries below therefore cover the **Arch OS-native layer only**: `bootstrap.sh`,
 
 ### Added
 
+- **The canonical fleet `make` verbs: `dry-run` and `check`
+  (dotgibson/dotfiles-core#691).** Nine repos had nine dialects — "dry run" was `dry-run`
+  in four repos and `bootstrap-dry` in four, "verify core" had five spellings, and only
+  `help` was common to every Makefile, so a contributor moving between repos re-learned
+  the verbs each time and no gate noticed. `dotfiles-core`'s `scripts/make-vocabulary.txt`
+  now declares the seven names once (`help`, `lint`, `check`, `dry-run`,
+  `packages-check`, `core-verify`, `test`) and its `make fleet-vocabulary` register
+  reports, per repo, which resolve. This repo had four of them.
+  - `dry-run` is the canonical name for what this repo spelled `bootstrap-dry`. The
+    recipe is unchanged; `bootstrap-dry` remains as a two-line alias, so anything already
+    calling it keeps working — the requirement is that the canonical name *exists*, not
+    that the old one dies.
+  - `check` is new: `lint`, then a hermetic `--links-only` bootstrap into a throwaway
+    `HOME`, asserting the symlink graph Core's loader expects (the module chain, the OS
+    overlay, starship/lazygit/nvim/vim/git, a `sesh.toml` that is a copy rather than a
+    link, and a managed `~/.zshrc` that sources the loader). `lint` proves the shell
+    parses; this proves the installer still wires what the loader reads. It runs on Arch
+    or a derivative only — `bootstrap.sh` refuses anywhere else by design, and the
+    fleet-wide equivalent runs in a container from `.github/workflows/bootstrap.yml`.
+  - `make test` is the one verb still missing here: it needs a repo-owned suite, which
+    this repo does not have. That is the test-floor half of dotgibson/dotfiles-core#691
+    and lands separately.
+
+
 - **`make markdown`, wired into `make lint`.** `lint-call.yml`'s markdown leg has been
   **blocking** since dotgibson/dotfiles-core#592, but this repo had no local target for
   it — a required check nobody could run before pushing, and a `.markdownlint.jsonc` only

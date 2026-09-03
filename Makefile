@@ -17,7 +17,7 @@
 # strip the exec bit off every script. See .gitattributes.
 # ──────────────────────────────────────────────────────────────────────────────
 .DEFAULT_GOAL := help
-.PHONY: help lint markdown bootstrap-dry packages-check secrets core-lock core-verify capabilities
+.PHONY: help lint markdown check dry-run bootstrap-dry packages-check secrets core-lock core-verify capabilities
 
 # bash explicitly, not make's default /bin/sh: packages-check SOURCES
 # core/lib/bootstrap-lib.sh, which is bash (arrays, [[ ]]). Arch happens to point
@@ -78,8 +78,50 @@ markdown: ## markdownlint the repo-owned *.md against .markdownlint.jsonc (skips
 	elif [ -z "$(MD_FILES)" ]; then echo "no repo-owned .md"; \
 	else echo "markdownlint-cli2 $(MD_FILES)"; markdownlint-cli2 $(MD_FILES); fi
 
-bootstrap-dry: ## Preview a full bootstrap (symlink plan + package plan), changing nothing
+# ── the canonical fleet verbs (dotgibson/dotfiles-core#691) ───────────────────
+# `dry-run` and `check` are two of the seven names every repo that vendors Core must
+# answer to (Core's scripts/make-vocabulary.txt; `make fleet-vocabulary` there renders the
+# register that checks it). Before that list, "dry run" was `dry-run` in four repos and
+# `bootstrap-dry` in four, "verify core" had five spellings, and only `help` was common to
+# every Makefile — a contributor re-learned the verbs in each repo and no gate noticed.
+# The requirement is that the CANONICAL name exists, not that a historical one dies, so
+# `bootstrap-dry` stays below as an alias.
+
+dry-run: ## Preview a full bootstrap (symlink plan + package plan), changing nothing
 	@./bootstrap.sh --dry-run
+
+# This repo's historical spelling for the target above, kept so anything that already
+# calls it — muscle memory, a local script, the PR template's checklist — keeps working.
+bootstrap-dry: dry-run ## (alias) the pre-#691 spelling of dry-run
+
+check: lint ## lint + a hermetic --links-only run against a throwaway HOME
+	@# The second half of the gate: `lint` proves the shell parses, this proves the
+	@# installer's symlink graph is still the one Core's loader expects — against a
+	@# throwaway HOME, so it can be run on a live box without touching anything in it.
+	@#
+	@# ARCH (or a derivative) ONLY: bootstrap.sh refuses to run anywhere else, by design —
+	@# it reads /etc/os-release and wants ID=arch or ID_LIKE=...arch... Off Arch this target
+	@# fails with that message rather than pretending. The fleet-wide equivalent runs in a
+	@# real container from .github/workflows/bootstrap.yml.
+	@#
+	@# The tpm directory is pre-created because blib_link_core clones the tmux plugin
+	@# manager into it on a first run; the check is about symlinks, not network.
+	@tmp=$$(mktemp -d); \
+	mkdir -p "$$tmp/.config/tmux/plugins/tpm"; \
+	echo ":: bootstrap --links-only into $$tmp"; \
+	HOME="$$tmp" ./bootstrap.sh --links-only >/dev/null || { echo "bootstrap failed"; rm -rf "$$tmp"; exit 1; }; \
+	rc=0; \
+	for l in .config/zsh/loader.zsh .config/zsh/80-os.zsh .config/starship.toml \
+	         .config/lazygit/config.yml .config/nvim .vimrc .gitconfig; do \
+	  test -L "$$tmp/$$l" || { echo "MISSING symlink: $$l"; rc=1; }; \
+	done; \
+	test -e "$$tmp/.config/zsh/loader.zsh" || { echo "loader.zsh is dangling"; rc=1; }; \
+	test -f "$$tmp/.config/sesh/sesh.toml" || { echo "sesh.toml not seeded"; rc=1; }; \
+	test -L "$$tmp/.config/sesh/sesh.toml" && { echo "sesh.toml must be a copy, not a link"; rc=1; }; \
+	grep -q "dotfiles-managed v4" "$$tmp/.zshrc" || { echo "~/.zshrc not managed"; rc=1; }; \
+	grep -q "source .*loader.zsh" "$$tmp/.zshrc" || { echo "~/.zshrc does not source the loader"; rc=1; }; \
+	rm -rf "$$tmp"; \
+	test $$rc -eq 0 && printf '\033[32m✓\033[0m symlink graph OK\n' || exit 1
 
 packages-check: ## Resolve every install/packages.txt name against the repos WITHOUT installing
 	@command -v pacman >/dev/null 2>&1 || { echo "pacman not found — run this on Arch"; exit 1; }

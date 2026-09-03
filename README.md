@@ -124,6 +124,7 @@ touching `pacman`), `--no-flatpak`, `--only`/`--skip` (wire a subset of module
 groups). Run `./bootstrap.sh --help` for the full list.
 
 Local checks live in the root `Makefile` — `make lint` runs the same gate as CI,
+`make check` adds a hermetic `--links-only` run against a throwaway HOME,
 `make packages-check` verifies every package name still resolves, `make secrets`
 runs gitleaks. `make` on its own lists them.
 

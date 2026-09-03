@@ -44,11 +44,17 @@ a pass.
 
 ## Local commands
 
-`make` (see the root `Makefile`) — `lint` reproduces the CI gate exactly,
-`bootstrap-dry` previews a full install, `packages-check` resolves every package
-name without installing, `secrets` runs gitleaks, and `core-lock` / `core-verify`
-handle vendored-Core provenance (both need a `dotfiles-core` checkout at
-`CORE_REPO`). Core's own `make audit` / `make sync` live **upstream**, not here.
+`make` (see the root `Makefile`) — `lint` reproduces the CI gate exactly, `check`
+adds a hermetic `--links-only` run against a throwaway HOME, `dry-run` previews a
+full install, `packages-check` resolves every package name without installing,
+`secrets` runs gitleaks, and `core-lock` / `core-verify` handle vendored-Core
+provenance (both need a `dotfiles-core` checkout at `CORE_REPO`). Core's own
+`make audit` / `make sync` live **upstream**, not here.
+
+Six of those names are the fleet's canonical verbs, declared once in `dotfiles-core`'s
+`scripts/make-vocabulary.txt` so a target means the same thing in every repo
+(dotgibson/dotfiles-core#691). `bootstrap-dry` is kept as an alias of `dry-run`. The
+seventh, `test`, is still missing here — this repo has no suite of its own yet.
 
 Note CI never exercises `provision()` — the reusable bootstrap test only runs
 `--links-only`. Package installation is covered by `make packages-check` and the
