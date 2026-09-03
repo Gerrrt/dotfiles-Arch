@@ -47,7 +47,7 @@ jobs:
     name: resolve package names (no install)
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    container: archlinux:latest
+    container: archlinux:latest@sha256:82b1b08faae9d61e3e7e13d562f4d09114d939105b0d59ff34140f3bd418593a
     steps:
       - name: Install job deps
         # Full -Syu, never a bare -Sy: the repo's own golden rule, and a partial
