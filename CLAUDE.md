@@ -44,15 +44,18 @@ a pass.
 
 ## Local commands
 
-`make` (see the root `Makefile`) — `lint` reproduces the CI gate exactly,
-`bootstrap-dry` previews a full install, `packages-check` resolves every package
-name without installing, `secrets` runs gitleaks, and `core-lock` / `core-verify`
+`make` (see the root `Makefile`) speaks Core's fleet-wide vocabulary
+(dotfiles-core#691): `lint` reproduces the CI gate exactly, `test` runs the `test/`
+suite, `dry-run` previews a full install (`bootstrap-dry` is a kept alias),
+`packages-check` resolves every package name without installing, `check` runs
+lint + test + dry-run, `secrets` runs gitleaks, and `core-lock` / `core-verify`
 handle vendored-Core provenance (both need a `dotfiles-core` checkout at
 `CORE_REPO`). Core's own `make audit` / `make sync` live **upstream**, not here.
 
 Note CI never exercises `provision()` — the reusable bootstrap test only runs
-`--links-only`. Package installation is covered by `make packages-check` and the
-`packages` workflow; anything else in `provision()` needs a real box or container.
+`--links-only`. Package installation is covered by `test/check-packages.sh` (via
+`make test`, which the `packages` workflow runs); anything else in `provision()`
+needs a real box or container.
 
 ## Where things are
 
@@ -60,6 +63,7 @@ Note CI never exercises `provision()` — the reusable bootstrap test only runs
 - `os/arch.conf`, `os/arch.gitconfig` — tmux + git OS overlays
 - `install/packages.txt` — Arch package names
 - `bootstrap.sh` — symlinks Core + OS files into place
-- `Makefile` — the local entry points (lint, dry-run, package + secret checks)
+- `Makefile` — the local entry points (lint, check, dry-run, test, package + secret checks)
+- `test/` — the repo's test suite, run by `make test` and by `packages.yml`
 - `SETUP.md` — the Arch install walkthrough
 - `core/` — vendored Core (read-only here; edit upstream in dotfiles-core)
