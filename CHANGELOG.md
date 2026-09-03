@@ -23,6 +23,40 @@ Entries below therefore cover the **Arch OS-native layer only**: `bootstrap.sh`,
 
 ### Added
 
+- **The fleet `make` vocabulary, and a `test/` suite** (dotgibson/dotfiles-core#691,
+  reported by dotgibson/dotfiles-core#846). Core declares one canonical set of verbs for
+  every repo that vendors it — `help`, `lint`, `check`, `dry-run`, `packages-check`,
+  `core-verify`, `test` — so the same word means the same thing in nine repos. This repo
+  was missing three of them.
+  - **`make dry-run`** is the canonical spelling of what was `make bootstrap-dry`.
+    `bootstrap-dry` is kept as a `.PHONY` alias: the requirement is that the canonical
+    name *exists*, not that the old one dies.
+  - **`make check`** is the full local gate — `lint` + `test` + a `bootstrap.sh
+    --dry-run` that proves the whole plan still builds, `provision()` included, which no
+    workflow ever executes. Deliberately *not* the hermetic `HOME=$(mktemp -d)
+    --links-only` run that Debian's and Fedora's `check` use: that is only hermetic in
+    `$HOME`, since `wire_links` ends in `blib_set_login_shell`, which appends to
+    `/etc/shells` and runs `chsh` under sudo. `--dry-run` reaches the same code with
+    `BLIB_DRY=1` and writes nothing.
+  - **`make test`** runs `test/*.sh`, and refuses rather than passing when there is
+    nothing to run — a `test:` that runs no suite renders as a no-op in the fleet
+    register.
+  - **`test/check-packages.sh`** is the suite, modelled on
+    `dotfiles-Debian/test/check-packages.sh`. It is the old inline `packages-check`
+    recipe promoted to a real script — same parser (`blib_read_pkgs_into`, so it reads
+    exactly what `bootstrap.sh` feeds pacman), same `pacman -Si` resolution, now
+    shellcheck-visible and invokable by path — **plus** a duplicate-name check, which
+    needs no package manager and so runs off-Arch too, and a clean skip instead of a hard
+    "pacman not found" failure. It carries **no version floors**: Debian needs them
+    because a frozen archive resolves `neovim` at 0.9.5 and calls that healthy, while on
+    a rolling release the repos carry current upstream by construction — the drift risk
+    here is names *moving* (`doggo` went AUR→extra in 2025) or disappearing.
+  - `.github/workflows/packages.yml` now runs **`make test`** rather than `make
+    packages-check`, and its path filter gained `test/**`. The floor requires a workflow
+    that runs the *suite*; a workflow pinned to one target inside it would silently skip
+    the second script anyone adds. `make packages-check` still runs exactly that script
+    for anyone who types the verb.
+
 - **`make markdown`, wired into `make lint`.** `lint-call.yml`'s markdown leg has been
   **blocking** since dotgibson/dotfiles-core#592, but this repo had no local target for
   it — a required check nobody could run before pushing, and a `.markdownlint.jsonc` only

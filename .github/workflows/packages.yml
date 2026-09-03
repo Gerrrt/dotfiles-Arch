@@ -16,6 +16,10 @@
 # Resolution only — `pacman -Si` reads the sync DB and downloads no packages, so
 # this is a fast job, not a full provision.
 #
+# It runs `make test`, which runs the whole test/ suite (today: test/check-packages.sh).
+# That is deliberate and load-bearing: dotgibson/dotfiles-core#691 requires every repo to
+# carry a test/ directory that a workflow actually executes, and this is that workflow.
+#
 # TODO(upstream): this is repo-local because dotfiles-core has no reusable for it
 # yet. Every OS repo has the same gap, so the durable home is a `packages_check`
 # input on dotfiles-core's bootstrap-test.yml — at which point this file collapses
@@ -25,10 +29,10 @@ name: packages
 
 on:
   pull_request:
-    paths: ['install/packages.txt', 'Makefile', '.github/workflows/packages.yml']
+    paths: ['install/packages.txt', 'test/**', 'Makefile', '.github/workflows/packages.yml']
   push:
     branches: [main]
-    paths: ['install/packages.txt', 'Makefile', '.github/workflows/packages.yml']
+    paths: ['install/packages.txt', 'test/**', 'Makefile', '.github/workflows/packages.yml']
   schedule:
     # Sun 07:00 UTC — a free fleet slot (web Sat 08:00, arch claude-routines Sat
     # 10:00, core Tue, Defense Wed, htpx Thu, Offense Fri).
@@ -44,7 +48,7 @@ concurrency:
 
 jobs:
   resolve:
-    name: resolve package names (no install)
+    name: test suite — resolve package names (no install)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     container: archlinux:latest@sha256:82b1b08faae9d61e3e7e13d562f4d09114d939105b0d59ff34140f3bd418593a
@@ -72,8 +76,17 @@ jobs:
         # user, which trips git's dubious-ownership guard.
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      - name: Resolve every package name
-        # Reuses `make packages-check`, which reuses core/lib/bootstrap-lib.sh's
-        # blib_read_pkgs — the SAME parser bootstrap.sh uses, so CI cannot pass on
-        # a list bootstrap would read differently.
-        run: make packages-check
+      - name: Run the test suite
+        # `make test`, not `make packages-check`: this is the workflow that satisfies the
+        # fleet test floor (dotgibson/dotfiles-core#691), so it must run the SUITE rather
+        # than one target inside it — otherwise a second test/ script would be added and
+        # never executed by anything. test/check-packages.sh is the whole suite today, and
+        # `make packages-check` still runs exactly it for anyone who types that verb.
+        #
+        # It reuses core/lib/bootstrap-lib.sh's blib_read_pkgs_into — the SAME parser
+        # bootstrap.sh uses — so CI cannot pass on a list bootstrap would read differently.
+        #
+        # If a future test needs heavier deps than `make git` above, give it its own lane
+        # rather than growing this container: the point of this job is that resolution is
+        # cheap.
+        run: make test

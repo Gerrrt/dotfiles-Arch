@@ -17,7 +17,10 @@
 # strip the exec bit off every script. See .gitattributes.
 # ──────────────────────────────────────────────────────────────────────────────
 .DEFAULT_GOAL := help
-.PHONY: help lint markdown bootstrap-dry packages-check secrets core-lock core-verify capabilities
+# `test` and `check` MUST be listed here for a reason beyond hygiene: a directory named
+# test/ now exists, so without .PHONY make would see an up-to-date "file" called test and
+# report "nothing to be done" — the exact silent no-op the fleet register calls out.
+.PHONY: help lint markdown check dry-run bootstrap-dry test packages-check secrets core-lock core-verify capabilities
 
 # bash explicitly, not make's default /bin/sh: packages-check SOURCES
 # core/lib/bootstrap-lib.sh, which is bash (arrays, [[ ]]). Arch happens to point
@@ -78,23 +81,67 @@ markdown: ## markdownlint the repo-owned *.md against .markdownlint.jsonc (skips
 	elif [ -z "$(MD_FILES)" ]; then echo "no repo-owned .md"; \
 	else echo "markdownlint-cli2 $(MD_FILES)"; markdownlint-cli2 $(MD_FILES); fi
 
-bootstrap-dry: ## Preview a full bootstrap (symlink plan + package plan), changing nothing
+# ── the canonical fleet verbs (dotgibson/dotfiles-core#691) ───────────────────
+# Core declares one `make` vocabulary for every repo that vendors it — help, lint,
+# check, dry-run, packages-check, core-verify, test — so that the same word means the
+# same thing in nine repos and `make <verb>` resolves in all of them. The requirement is
+# that the canonical name EXISTS, not that the historical one dies, so `bootstrap-dry`
+# stays as a .PHONY alias: it is in this repo's README, CHANGELOG and muscle memory.
+dry-run: ## Preview a full bootstrap (symlink plan + package plan), changing nothing
 	@./bootstrap.sh --dry-run
 
-packages-check: ## Resolve every install/packages.txt name against the repos WITHOUT installing
-	@command -v pacman >/dev/null 2>&1 || { echo "pacman not found — run this on Arch"; exit 1; }
-	@set -e; \
-	. core/lib/bootstrap-lib.sh; \
-	pkgs=$$(blib_read_pkgs install/packages.txt); \
-	[ -n "$$pkgs" ] || { echo "no packages parsed from install/packages.txt"; exit 1; }; \
-	echo ":: resolving $$(echo "$$pkgs" | wc -l) package names (no download, no install)"; \
-	rc=0; \
-	for p in $$pkgs; do \
-	  pacman -Si "$$p" >/dev/null 2>&1 || { echo "  UNRESOLVED: $$p"; rc=1; }; \
+bootstrap-dry: dry-run ## Alias for `dry-run` (the spelling this repo used before #691)
+
+# `check` is the full LOCAL gate: everything that can be run before pushing without
+# changing the box. lint is the CI gate verbatim, test is the test/ suite, and the
+# dry-run proves bootstrap.sh's whole plan still builds — provision() included, which no
+# workflow ever executes (bootstrap.yml runs --links-only; see CLAUDE.md).
+#
+# DELIBERATELY NOT a hermetic `HOME=$$(mktemp -d) ./bootstrap.sh --links-only`, which is
+# what dotfiles-Debian and dotfiles-Fedora's `check` do. That run is only hermetic in
+# $HOME: wire_links ends in blib_set_login_shell, which appends to /etc/shells and calls
+# `chsh` under sudo on any box whose login shell is not already zsh. A local check that
+# can change your login shell is not one people run twice. --dry-run reaches the same
+# code with BLIB_DRY=1 and touches nothing.
+check: lint test ## The full local gate: lint + the test/ suite + a bootstrap dry-run (changes nothing)
+	@echo ":: bootstrap.sh --dry-run (plan only, nothing is written)"
+	@./bootstrap.sh --dry-run >/dev/null || { echo "bootstrap --dry-run FAILED — re-run it directly to see why"; exit 1; }
+	@echo "check OK"
+
+# The test/ floor #691 requires: a real suite, in a directory, run by a workflow
+# (.github/workflows/packages.yml runs `make test`). A `test:` target that did not run
+# one would render as a no-op in the fleet register, which is why this refuses rather
+# than passing when the directory is empty.
+#
+# The glob is guarded because an unmatched glob stays LITERAL in sh — the same trap the
+# capabilities target below documents.
+#
+# EXIT CODE: keep the highest rc any script returned, not `|| rc=1`. test/check-packages.sh
+# documents 1 for usage/env failures and 2 for the drift signal — collapsing both into 1
+# would tell a workflow (or a human reading the exit code) that the manifest is fine and
+# the environment is broken, when in fact the manifest has drifted. max() over the scripts
+# is the only aggregation that survives more than one test file too: two scripts failing
+# 1 and 2 should still report 2.
+test: ## Run the test/ suite (install/packages.txt resolution + manifest hygiene)
+	@rc=0; found=0; \
+	for t in test/*.sh; do \
+	  [ -x "$$t" ] || continue; found=1; \
+	  echo "── $$t"; "$$t"; trc=$$?; \
+	  [ $$trc -gt $$rc ] && rc=$$trc; \
 	done; \
-	if [ $$rc -eq 0 ]; then echo "all package names resolve"; else \
-	  echo "^^ renamed or dropped upstream (Arch is a ROLLING release) — check archlinux.org/packages"; fi; \
-	exit $$rc
+	if [ "$$found" -eq 0 ]; then \
+	  echo "!! no executable test/*.sh — this repo must carry at least one (dotgibson/dotfiles-core#691)"; exit 1; fi; \
+	[ $$rc -eq 0 ] && echo "test OK" || echo "test FAILED (rc=$$rc)"; exit $$rc
+
+# The logic used to live INLINE here — a dozen escaped recipe lines sourcing a bash
+# library from a make recipe. It moved to test/check-packages.sh in #691 so that it is a
+# script the test suite can run, shellcheck can read, and a workflow can invoke by path;
+# this target stays because it is a canonical fleet verb and the name people type.
+# Behaviour is a superset of the old inline version: same parser, same `pacman -Si`
+# resolution, plus a duplicate-name check and a clean skip off-Arch instead of a hard
+# "pacman not found" failure.
+packages-check: ## Resolve every install/packages.txt name against the repos WITHOUT installing
+	@./test/check-packages.sh install/packages.txt
 
 secrets: ## Scan the full git HISTORY for credentials (gitleaks — not just the working tree)
 	@command -v gitleaks >/dev/null 2>&1 || { \
