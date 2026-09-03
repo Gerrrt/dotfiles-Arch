@@ -115,15 +115,23 @@ check: lint test ## The full local gate: lint + the test/ suite + a bootstrap dr
 #
 # The glob is guarded because an unmatched glob stays LITERAL in sh — the same trap the
 # capabilities target below documents.
+#
+# EXIT CODE: keep the highest rc any script returned, not `|| rc=1`. test/check-packages.sh
+# documents 1 for usage/env failures and 2 for the drift signal — collapsing both into 1
+# would tell a workflow (or a human reading the exit code) that the manifest is fine and
+# the environment is broken, when in fact the manifest has drifted. max() over the scripts
+# is the only aggregation that survives more than one test file too: two scripts failing
+# 1 and 2 should still report 2.
 test: ## Run the test/ suite (install/packages.txt resolution + manifest hygiene)
 	@rc=0; found=0; \
 	for t in test/*.sh; do \
 	  [ -x "$$t" ] || continue; found=1; \
-	  echo "── $$t"; "$$t" || rc=1; \
+	  echo "── $$t"; "$$t"; trc=$$?; \
+	  [ $$trc -gt $$rc ] && rc=$$trc; \
 	done; \
 	if [ "$$found" -eq 0 ]; then \
 	  echo "!! no executable test/*.sh — this repo must carry at least one (dotgibson/dotfiles-core#691)"; exit 1; fi; \
-	[ $$rc -eq 0 ] && echo "test OK" || echo "test FAILED"; exit $$rc
+	[ $$rc -eq 0 ] && echo "test OK" || echo "test FAILED (rc=$$rc)"; exit $$rc
 
 # The logic used to live INLINE here — a dozen escaped recipe lines sourcing a bash
 # library from a make recipe. It moved to test/check-packages.sh in #691 so that it is a
