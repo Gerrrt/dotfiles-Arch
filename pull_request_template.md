@@ -15,6 +15,8 @@
 ## Checks
 
 - [ ] `make lint` is green (same shellcheck/`bash -n`/`zsh -n` gate CI runs)
+- [ ] `make test` is green (the `test/` suite; `make check` runs lint + test + a
+      bootstrap dry-run in one go)
 - [ ] If `install/packages.txt` changed: `make packages-check` resolves every name
 - [ ] If `bootstrap.sh` changed: `./bootstrap.sh --dry-run` previews correctly, and
       the change was exercised on a real Arch box or container (CI only covers
