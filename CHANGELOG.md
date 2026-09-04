@@ -95,6 +95,19 @@ Entries below therefore cover the **Arch OS-native layer only**: `bootstrap.sh`,
 
 ### Fixed
 
+- **`bootstrap.sh`'s `PATH` is not the shell's `PATH` — adopt `blib_user_bindirs_on_path`**
+  (dotgibson/dotfiles-core#748). `go install` pins `GOBIN` to `~/.local/bin`, and `~/.local/bin`, `~/.cargo/bin` and `$GOBIN` reach
+  `PATH` only through the zsh layer, i.e. only inside a Core shell — which does not exist
+  while `bootstrap.sh` runs. So every `command -v <tool>` guard here was answered by the
+  PATH of whatever shell launched the bootstrap: on a fresh box, bash, with none of them.
+  That is wasted work when the guard picks whether to reinstall, and a **wrong answer** when
+  it picks a branch — `dotfiles-openSUSE` probed `command -v mise` for a mise `mise.run` had
+  written to `~/.local/bin` moments earlier, both arms of its Go fallback missed, and the run
+  exited 2 on every bootstrap. No stubbed CI leg can see that: a stub installs nothing, so
+  "is the tool present afterwards" can never fail under one. Core has shipped
+  `blib_user_bindirs_on_path` for exactly this since dotgibson/dotfiles-core#425 — it resolves
+  `CARGO_HOME` and `GOBIN`/`GOPATH` rather than hard-coding them, and adds only directories
+  that **exist**, so it is called again after an installer creates one. Arch escapes the worse half of this by luck — pacman puts `mise` in `/usr/bin`, so the fallback arm resolves — but `_dotfiles_go_install`'s presence guard could never see a tool an earlier run had installed, so every bootstrap re-ran every `go install`.
 - **`bootstrap.sh` could exit 0 having installed nothing.** `blib_read_pkgs`'
   exit status is lost inside the `< <(…)` process substitution, so a missing or
   empty `install/packages.txt` produced an empty array, a failed `pacman -S`, a
