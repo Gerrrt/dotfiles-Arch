@@ -91,6 +91,26 @@ source "$DOTFILES/core/lib/ux.sh"
 # shellcheck source=core/lib/bootstrap-lib.sh
 source "$DOTFILES/core/lib/bootstrap-lib.sh"
 
+# ── PATH prelude: make the presence guards below tell the TRUTH ───────────────
+# bootstrap runs in BASH, before any Core shell exists. ~/.local/bin (this script's GOBIN)
+# and ~/.cargo/bin reach PATH only via core/zsh/00-tools.zsh and os/arch.zsh, i.e. only
+# inside a Core zsh — so `command -v <tool>` here was answered by the PATH of whatever
+# shell launched the bootstrap, which on a fresh box is bash with none of them.
+#
+# Concretely: _dotfiles_go_install's `command -v "$3"` guard could never see a tool an
+# EARLIER run had installed into ~/.local/bin, so every bootstrap re-ran every go install.
+# Arch escapes the worse half of this only by luck — pacman puts mise in /usr/bin, so the
+# `command -v mise` fallback arm resolves. The repos where mise comes from mise.run instead
+# had that arm silently fail against a mise they had just installed, and openSUSE shipped a
+# bootstrap that exited 2 on every run because of it (dotgibson/dotfiles-core#748).
+#
+# blib_user_bindirs_on_path is Core's helper for exactly this (core/lib/bootstrap-lib.sh),
+# resolving CARGO_HOME and GOBIN/GOPATH rather than hard-coding them. It adds only
+# directories that EXIST, so on a box whose ~/.local/bin is first created by the go
+# installs themselves it takes effect from the next run — which is precisely the run that
+# was doing the redundant work.
+blib_user_bindirs_on_path
+
 # Fail LOUD and located. Under `set -e` a mid-run failure used to abort with no
 # indication of where — on a fresh box, mid-`pacman`, that is the difference
 # between "retry the one step" and "start over".
@@ -214,7 +234,8 @@ provision() {
   #   paru -S carapace-bin sesh-bin 1password-cli
   # NOTE: `go install` drops binaries in $GOBIN (defaults to ~/go/bin), which is
   # NOT on the shell PATH (the Core shell layer prefixes ~/.local/bin + ~/.cargo/
-  # bin). Pin GOBIN=~/.local/bin so the tools land somewhere already on PATH.
+  # bin). Pin GOBIN=~/.local/bin so the tools land somewhere already on PATH —
+  # including THIS script's PATH, which the prelude at the top now covers too.
   #
   # VERSION: sesh defaults to `latest`, which is NOT reproducible — a re-run six
   # months from now installs different code. Core pins and SHA-256-verifies every
