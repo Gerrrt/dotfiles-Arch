@@ -64,7 +64,7 @@
 cross-platform dotfiles system. The shared **Core** (zsh, tmux, Neovim, git,
 starship, mise) is authored once in
 [`dotfiles-core`](https://github.com/dotgibson/dotfiles-core) and vendored under
-`core/` via `git subtree`, so a clone is self-contained. This repo adds only what
+`core/` as a pinned, filtered copy, so a clone is self-contained. This repo adds only what
 is genuinely Arch: `pacman`, the AUR, `multilib`, and mirror management — leaning
 on Arch's deep official repos so there are no `curl | sh` fallbacks.
 

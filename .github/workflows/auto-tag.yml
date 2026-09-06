@@ -7,7 +7,7 @@ name: auto-tag
 # version line stops drifting from the Core it vendors.
 #
 # THIS FILTER USED TO BE `paths: ['core/**']`, AND THAT WAS THE DEFECT
-# (dotgibson/dotfiles-core#696). Watching only the vendored subtree meant the tag advanced
+# (dotgibson/dotfiles-core#696). Watching only the vendored core/ meant the tag advanced
 # when *Core* moved and at no other time, so this repo's own work was released only when
 # an unrelated fan-out happened to sweep it up — and was then attributed to a tag whose
 # entire meaning was "Core moved". Measured on dotfiles-Fedora, the template every Linux

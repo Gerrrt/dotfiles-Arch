@@ -183,7 +183,7 @@ core-lock: ## Explain why core.lock is NOT regenerated here (it is written by Co
 	@echo "core.lock is not regenerated in this repo."
 	@echo
 	@echo "Its format is owned by scripts/sync-core.sh in dotfiles-core, which stamps it in"
-	@echo "the SAME commit as the subtree pull. A second generator here cannot be kept in"
+	@echo "the SAME commit as the vendor. A second generator here cannot be kept in"
 	@echo "step with it, and this one had already drifted (dotgibson/dotfiles-core#593):"
 	@echo
 	@echo "  * it hardcoded core_branch=main, so regenerating a lock that had been pinned"

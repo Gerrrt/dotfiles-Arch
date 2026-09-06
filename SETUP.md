@@ -6,7 +6,7 @@ the [`README.md`](./README.md) "Install" section, which is the **consumer** path
 — `git clone` a repo that *already* exists on GitHub. You only run through this
 doc once per repo; after that, the README flow applies.
 
-The git lifecycle here (init → commit → subtree-add → bootstrap → publish) is
+The git lifecycle here (init → commit → vendor Core → bootstrap → publish) is
 **identical for every OS repo** in the system. Only "Stage 0" below changes per
 distro. When you stamp openSUSE / Alpine / Gentoo, copy this file and swap Stage
 0; see [the porting note](#porting-this-doc-to-the-next-os-repo) at the bottom.
@@ -90,12 +90,37 @@ git config user.email "<you@example.com>"
 git add -A
 git commit -m "Arch OS-native layer (stamped from Fedora template)"
 
-# 3. NOW vendor Core as a squashed subtree under core/
-git subtree add --prefix=core https://github.com/<you>/dotfiles-core main --squash
+# 3. NOW vendor Core under core/ — a RELEASED TAG, never `main` (see below)
+git subtree add --prefix=core https://github.com/<you>/dotfiles-core refs/tags/v7 --squash
 ```
 
 If `dotfiles-core` lives only on disk (not yet pushed), step 3 takes a path just
-as happily: `git subtree add --prefix=core ~/dotfiles-core main --squash`.
+as happily: `git subtree add --prefix=core ~/dotfiles-core refs/tags/v7 --squash`.
+
+> **Prefer the scaffold.** `scripts/new-os-repo.sh` in `dotfiles-core` does all of
+> Stage 1 for you, and vendors the *filtered* set (`core.manifest` ∪ `core.vendor`)
+> straight away rather than the whole upstream tree. The `git subtree add` above is
+> the **manual fallback** for a repo scaffolded some other way. Either way it is
+> **one-time**: `sync-core.sh` replaces `core/` but will not create it, so it skips
+> a repo that has none yet.
+>
+> **A released tag, never `main`.** The fan-out pins every repo to the exact commit
+> a release tag points at, and `core.lock` records that commit. A tree vendored from
+> whatever `main` happened to be is not that commit, so `core-integrity` reports the
+> freshly-vendored repo as **TAMPERED** before it has done anything wrong.
+
+**`git subtree add` writes no `core.lock`,** so the repo has no Core provenance until
+a sync stamps one — `core-integrity` reports the missing lock rather than a tree
+verdict. Run the fan-out from a `dotfiles-core` checkout to stamp it (this also
+replaces the whole-tree copy with the filtered vendor set):
+
+```bash
+make sync          # in dotfiles-core
+```
+
+Then verify from this repo with `make core-verify`. See `VENDORING.md` in
+`dotfiles-core` for the full mechanism, including the throwaway-worktree form of the
+command for a repo that has no lock yet.
 
 ---
 
