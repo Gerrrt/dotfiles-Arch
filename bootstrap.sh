@@ -71,15 +71,17 @@ esac; shift; done
 # so this is belt-and-braces) and is exported so anything we shell out to agrees.
 export BLIB_DRY="${BLIB_DRY:-0}"
 
-# ── core/ subtree present? (inline: can't source a lib out of core/ before this) ─
+# ── vendored core/ present? (inline: can't source a lib out of core/ before this) ─
 # Validate the SPECIFIC paths we depend on (zsh modules + the two libs sourced
-# next) so a missing/partial subtree fails HERE with a precise message, not later
+# next) so a missing/partial vendor fails HERE with a precise message, not later
 # with a cryptic `source: No such file`.
 for _req in core/zsh/loader.zsh core/lib/ux.sh core/lib/bootstrap-lib.sh; do
   if [[ ! -e "$DOTFILES/$_req" ]]; then
-    echo "core/ subtree missing or incomplete (need $_req). One-time, run:" >&2
-    echo "  git subtree add  --prefix=core <dotfiles-core remote> main --squash   # first time" >&2
-    echo "  git subtree pull --prefix=core <dotfiles-core remote> main --squash   # to update" >&2
+    echo "vendored core/ missing or incomplete (need $_req). To populate it:" >&2
+    echo "  make sync                                                          # in dotfiles-core" >&2
+    echo "If core/ does not exist AT ALL, the fan-out skips this repo — do the" >&2
+    echo "one-time vendor first (a RELEASED TAG, never main), then sync:" >&2
+    echo "  git subtree add --prefix=core <dotfiles-core remote> refs/tags/v7 --squash" >&2
     exit 1
   fi
 done
@@ -385,8 +387,8 @@ wire_links() {
   # shellcheck disable=SC2119  # no args is intentional — writes the default module set
   blib_write_zshrc_loader
   blib_set_login_shell
-  # Install the local pre-commit hook that refuses commits touching the vendored
-  # core/ subtree. core-integrity.yml catches this at PR time; this catches it at
+  # Install the local pre-commit hook that refuses commits touching the
+  # vendored core/. core-integrity.yml catches this at PR time; this catches it at
   # COMMIT time, on a fresh clone, before the mistake is ever pushed. Never fatal:
   # the helper returns non-zero when it can't resolve a hooks dir, and a missing
   # guard must not fail a bootstrap.

@@ -23,7 +23,9 @@ recording the commit — **not** `git subtree` (dotgibson/dotfiles-core#587). Th
 has teeth: `git subtree pull` moves `core/` without moving `core.lock`, and `core-integrity`
 then reports the tree as **TAMPERED**. There is no local fix, because `core.lock` is written
 by `sync-core.sh` in the same commit as the vendor — re-run the fan-out instead.
-`core/VENDORING.md` has the mechanism.
+dotfiles-core's [`VENDORING.md`](https://github.com/dotgibson/dotfiles-core/blob/main/VENDORING.md)
+has the mechanism — upstream, not in `core/`: it is not in `core.vendor`, so it is never
+vendored here.
 
 What belongs **here** is only the OS-native layer: the `pacman`/AUR package list, clipboard + paths, and the bootstrap.
 

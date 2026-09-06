@@ -76,7 +76,7 @@ if [[ -r core/lib/bootstrap-lib.sh ]]; then
   # shellcheck source=core/lib/bootstrap-lib.sh
   source core/lib/bootstrap-lib.sh
 else
-  bad "core/lib/bootstrap-lib.sh not found — is the core/ subtree vendored?"
+  bad "core/lib/bootstrap-lib.sh not found — is core/ vendored?"
   exit 1
 fi
 

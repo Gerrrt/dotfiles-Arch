@@ -3,7 +3,7 @@
 # system with one author (same convention as dotfiles-core/CODEOWNERS).
 * @gerrrt
 
-# The vendored Core subtree is NOT authored here — it is a git-subtree copy of
+# The vendored core/ is NOT authored here — it is a pinned, filtered copy of
 # dotfiles-core, overwritten on the next `make sync`. A PR touching these paths is
 # either a legitimate fan-out (authored upstream, landing via a sync/core-vX.Y.Z
 # branch) or a mistake. core-integrity.yml blocks the latter; this makes sure the
