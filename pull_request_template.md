@@ -7,7 +7,7 @@
 
 ## Boundary check
 
-- [ ] I did **not** hand-edit `core/` (it is a `git subtree` copy of `dotfiles-core`,
+- [ ] I did **not** hand-edit `core/` (it is a vendored copy of `dotfiles-core`,
       overwritten on the next `make sync`; fix it upstream, then fan out)
 - [ ] The change is genuinely **Arch-specific** — if it would be identical on every
       distro it belongs in Core; if it changes with the operator it belongs in a role repo

@@ -116,7 +116,7 @@ cd ~/dotfiles-Arch
 exec zsh
 ```
 
-`core/` is a vendored subtree and is **already present** in a clone — there is no
+`core/` is a vendored copy and is **already present** in a clone — there is no
 submodule step. `bootstrap.sh` is idempotent: it does a full `pacman -Syu`,
 installs the package list, and symlinks Core + the Arch layer into place. Flags:
 `--dry-run` (preview everything, change nothing), `--links-only` (re-link without
